@@ -29,44 +29,10 @@ void c_main()
     print_string("test print\n\r");
     
     
-    fat = malloc(sizeof(Fat16));
+    fat = zalloc(sizeof(Fat16));
     fat_init(fat);
-
-    DirEntry *found_dir;
-
-    parsed_dir *dir = parse_dir(
-        fat->root_dir,
-        fat->bs.bpb.root_dir_entries
-    );
+    print_string("fat initialized!\n\r");
     
-    for (int i = 0; i < dir->count; i++)
-    {
-        print_string(dir->entries[i].name);
-    
-        if ((dir->entries[i].attributes & 0x10) &&
-            strcmp(dir->entries[i].name, "NEWDIR1    ") == 0)
-        {
-            print_string("   |  found\n\r");
-    
-            found_dir = load_dir(fat, dir->entries[i].raw_entry);
-    
-            free_parsed_dir(dir);
-    
-            dir = parse_dir(
-                found_dir,
-                dir->entries[i].raw_entry->file_size / sizeof(DirEntry)
-            );
-            break;
-        }
-    
-        print_string("\n\r");
-    }
-    
-    for (int i = 0; i < dir->count; i++)
-    {
-        print_string(dir->entries[i].name);
-        print_string("\n\r");
-    }
     
         
 while (1){;}
