@@ -93,7 +93,7 @@ $(out_dir)/disk.img: $(build_dir)/bootloader.o $(build_dir)/stage2.bin
 	mmd -i $(out_dir)/disk.img ::_TEST_LFN_ENTRIES_NEWDIR3
 	mcopy -i $(out_dir)/disk.img $(etc_dir)/test.txt ::NEWFILE1
 	mcopy -i $(out_dir)/disk.img $(etc_dir)/test.txt ::NEWFILE2
-	mcopy -i $(out_dir)/disk.img $(etc_dir)/test_sub.txt ::NEWDIR1/NEWFILE3.txt
+	mcopy -i $(out_dir)/disk.img $(etc_dir)/test_sub.txt ::/NEWDIR1/NEWFILE3.txt
 	mdel -i $(out_dir)/disk.img ::NEWFILE1
 
 
