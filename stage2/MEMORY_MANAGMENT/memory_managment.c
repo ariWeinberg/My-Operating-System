@@ -103,3 +103,13 @@ void *realloc(void *src, uint16_t newSize)
 
     return 0;
 }
+
+void *zalloc(uint16_t size)
+{
+    uint8_t *alloc = (uint8_t*)malloc(size);
+    for (int i = 0; i < size; i++)
+    {
+        alloc[i] = 0;
+    }
+    return alloc;
+}

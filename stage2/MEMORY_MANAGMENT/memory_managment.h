@@ -7,4 +7,5 @@ static void mem_init(void);
 void *malloc(uint16_t size);
 void free(void *ptr);
 void *realloc(void *src, uint16_t newSize);
+void *zalloc(uint16_t size);
 #endif
