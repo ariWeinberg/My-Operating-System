@@ -19,6 +19,7 @@
 #include "../ATA_DRIVER/ata_driver.h"
 #include "../MEMORY_MANAGMENT/memory_managment.h"
 #include "../UTILS/utils.h"
+#include "../STRING/string.h"
 uint8_t fat_init(Fat16 *fat)
 {
     if (read_boot_sector(fat))
@@ -68,7 +69,7 @@ bool read_boot_sector(Fat16 *fat)
 bool load_fat(Fat16 *fat)
 {
     
-    fat->fat = malloc(fat->fat_sectors * fat->bytes_per_sector);
+    fat->fat = zalloc(fat->fat_sectors * fat->bytes_per_sector);
     
     // Fat16 entries are little-endian; code assumes LE CPU
     pio28_read(fat->fat, &ata_primary, fat->fat_sectors, ATA_PRIMARY_BASE, fat->fat_start_lba);
@@ -77,7 +78,7 @@ bool load_fat(Fat16 *fat)
 
 bool load_root_directory(Fat16 *fat)
 {
-    fat->root_dir = malloc(fat->root_dir_sectors * fat->bytes_per_sector);
+    fat->root_dir = zalloc(fat->root_dir_sectors * fat->bytes_per_sector);
     pio28_read(fat->root_dir, &ata_primary, fat->root_dir_sectors, ATA_PRIMARY_BASE, fat->root_dir_start_lba);
     return false;
 }
@@ -108,11 +109,10 @@ ClusterChain *traverse_chain(Fat16 *fat, uint16_t chain_start)
     int i = 0;
     uint16_t current_cluster = chain_start;
 
-    ClusterChain *chain = malloc(sizeof(ClusterChain));
+    ClusterChain *chain = zalloc(sizeof(ClusterChain));
     chain->cluster_count = 0;
     chain->chain = NULL;
 
-    
     while (current_cluster < FAT_EOC_START && chain->cluster_count < (fat->fat_bytes / 2))
     {
         if (current_cluster == FAT_BAD_SECTOR || current_cluster == FAT_FREE_SECTOR)
@@ -124,14 +124,14 @@ ClusterChain *traverse_chain(Fat16 *fat, uint16_t chain_start)
         // 
         // TODO: handle loops, and other FAT corruption problems....
         // 
-
+        
         uint32_t fat_entries = fat->fat_bytes / 2;
         if (current_cluster >= fat_entries) {
             free(chain->chain);
             free(chain);
             return NULL;
         }
-
+        
         chain->cluster_count++;
         chain->chain = realloc(chain->chain, chain->cluster_count * sizeof(uint16_t));
         if(!chain->chain)
@@ -163,42 +163,39 @@ void *load_cluster_chain(Fat16 *fat, ClusterChain *chain, void *destination)
         ptr += i * fat->sectors_per_cluster * fat->bytes_per_sector;
 
         read_cluster(fat, chain->chain[i], ptr);
-
+        
     }
     return destination;
 }
 
 DirEntry *load_dir(Fat16 *fat, DirEntry *directory)
 {
-    // 
-    // TODO: handle any errors...
-    // 
-    uint32_t sectors = bytes_to_sectors(fat, directory->file_size);
-    uint16_t cluster_count = sectors_to_clusters(fat, sectors);
-    
-    DirEntry *dest = malloc(sectors * fat->bytes_per_sector);
-    
-    ClusterChain *chain = traverse_chain(fat, directory->first_cluster_low);
-    if (!chain) {
-        free(dest);
-        return NULL;
-    }
+    ClusterChain *chain =
+        traverse_chain(fat, directory->first_cluster_low);
 
-    
-    if(chain->cluster_count != cluster_count)
+    if (!chain)
+        return NULL;
+
+    uint32_t total_bytes =
+        chain->cluster_count *
+        fat->sectors_per_cluster *
+        fat->bytes_per_sector;
+
+    DirEntry *dest = zalloc(total_bytes);
+    if (!dest)
     {
         free(chain->chain);
         free(chain);
-        free(dest);
         return NULL;
     }
 
-
     load_cluster_chain(fat, chain, dest);
+
     free(chain->chain);
     free(chain);
     return dest;
 }
+
 
 DirEntry *find_file_in_directory(Fat16 *fat, DirEntry *directory, const char* name)
 
@@ -232,7 +229,7 @@ DirEntry *find_file_in_directory(Fat16 *fat, DirEntry *directory, const char* na
         default:
             if(memcmp(name, dir[i].filename8_3, 11) == 0)
             {
-                DirEntry *result = malloc(sizeof(DirEntry));
+                DirEntry *result = zalloc(sizeof(DirEntry));
                 *result = dir[i];
                 if(must_free){free(dir);}
                 return result;
@@ -246,7 +243,13 @@ DirEntry *find_file_in_directory(Fat16 *fat, DirEntry *directory, const char* na
     return NULL;
 }
 
-
+/**
+ * @brief Clear an LFN buffer.
+ *
+ * Resets the internal LFN entry count.
+ *
+ * @param buf Pointer to LFN_buffer structure.
+ */
 static inline void lfn_buffer_clear(LFN_buffer *buf)
 {
     buf->count = 0;
@@ -284,7 +287,7 @@ char *parse_LFN_buffer(LFN_buffer *buffer)
 
     // Compute total length
     uint32_t total_len = buffer->count * 13;
-    char *name = malloc(total_len + 1);
+    char *name = zalloc(total_len + 1);
     if (!name)
         return NULL;
 
@@ -304,7 +307,7 @@ char *parse_LFN_buffer(LFN_buffer *buffer)
 
 parsed_dir *parse_dir(DirEntry *dir, uint32_t max_entries)
 {
-    parsed_dir *pd = malloc(sizeof(parsed_dir));
+    parsed_dir *pd = zalloc(sizeof(parsed_dir));
     if (!pd)
         return NULL;
 
@@ -352,7 +355,7 @@ parsed_dir *parse_dir(DirEntry *dir, uint32_t max_entries)
         else
         {
             // Allocate 8.3 name (11 chars + NULL)
-            p.name = malloc(12);
+            p.name = zalloc(12);
             if (p.name)
             {
                 for (int j = 0; j < 11; j++)
@@ -389,4 +392,99 @@ void free_parsed_dir(parsed_dir *pd)
 
     free(pd->entries);
     free(pd);
+}
+
+
+parsed_dir_entry *find_parsed_dir_entry(parsed_dir *dir, const char *name)
+{
+    for (int i = 0; i < dir->count; i++)
+    {
+        if (strcmp(dir->entries[i].name, name) == 0)
+        {
+            return &dir->entries[i];
+        }
+    }
+    return NULL;
+}
+
+void *load_file(Fat16 *fat, DirEntry *file)
+{
+    ClusterChain *chain = traverse_chain(fat, file->first_cluster_low);
+
+    if (!chain)
+        return NULL;
+
+    uint32_t total_bytes = chain->cluster_count * fat->sectors_per_cluster * fat->bytes_per_sector;
+    DirEntry *dest = zalloc(total_bytes);
+    if (!dest)
+    {
+        free(chain->chain);
+        free(chain);
+        return NULL;
+    }
+
+    load_cluster_chain(fat, chain, dest);
+
+    free(chain->chain);
+    free(chain);
+    return dest;
+}
+
+void *open(Fat16 *fat, const char *name)
+{
+    void *file = NULL;
+    char **name_segments = (char**)NULL;
+    bool dir_owned = false;
+    uint16_t segments_count = strsplit(name, '/', &name_segments);
+    DirEntry *current_dir = fat->root_dir;
+    parsed_dir *current_parsed_dir = parse_dir(current_dir, fat->bs.bpb.root_dir_entries);
+    if (current_parsed_dir) // return NULL on parsing error.
+    {
+        for (uint16_t i = 0; i < segments_count; i++)
+        {
+            parsed_dir_entry *e = find_parsed_dir_entry(current_parsed_dir, name_segments[i]);
+            if (!e) {break;}
+            if((!(e->attributes & 0x10)) && i < (segments_count - 1))  {break;}
+            
+            
+            if (i == segments_count - 1 && !(e->attributes & 0x10))
+            {
+                file = load_file(fat, e->raw_entry);
+                break;
+            }
+            if(__reload_open(fat, &dir_owned, &current_dir, &current_parsed_dir, e))
+            {
+                break;
+            }
+        }   
+    }
+    if(dir_owned)
+    {free(current_dir);}
+    free(current_parsed_dir);
+    for(uint16_t j=0;j<segments_count;j++)
+    {
+        free(name_segments[j]);
+    }
+    free(name_segments);
+    return file;
+}
+
+bool __reload_open(
+    Fat16 *fat,
+    bool *dir_owned,
+    DirEntry **current_dir,
+    parsed_dir **current_parsed_dir,
+    parsed_dir_entry *e)
+
+{
+    if(*dir_owned)
+    {free(*current_dir);}
+    *current_dir = load_dir(fat, e->raw_entry);
+    *dir_owned = true;
+    if (!*current_dir) {return true;}
+    free(*current_parsed_dir);
+    *current_parsed_dir = parse_dir(*current_dir, e->file_size / sizeof(DirEntry));
+    if(!*current_parsed_dir) {return true;}
+
+    return false;
 }
