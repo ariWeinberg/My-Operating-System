@@ -1,7 +1,6 @@
 [bits 16]
 ; [org 0x8000]
 
-extern c_main
 
 main:
     cli                     ; no interrupts
@@ -69,6 +68,7 @@ DATA_SEL equ gdt_data - gdt_start
 
 
 [bits 32]
+extern c_main
 pm_entry:
 
     mov ax, DATA_SEL
@@ -83,7 +83,6 @@ pm_entry:
 
 
     mov dl, [boot_drive]  ; restore boot drive number
-
     call c_main
 
     jmp hang
