@@ -13,4 +13,5 @@ char *strncat(char *dest, const char *src, int n);
 // dest: pointer to buffer where ASCII string will be written (must have at least len+1 bytes)
 // Returns: number of bytes written (excluding null terminator)
 uint32_t utf16_to_ascii(uint16_t *src, uint32_t len, char *dest);
+uint16_t strsplit(const char *str, const char delimiter, char ***dest);
 #endif

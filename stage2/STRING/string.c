@@ -1,4 +1,7 @@
 #include "string.h"
+#include "../MEMORY_MANAGMENT/memory_managment.h"
+#include "../STD/defs.h"
+#include "../STD/bool.h"
 
 // optional: simple strlen
 int strlen(const char *s)
@@ -51,4 +54,94 @@ uint32_t utf16_to_ascii(uint16_t *src, uint32_t len, char *dest)
     }
     dest[len] = '\0';
     return len;
+}
+
+uint16_t strsplit(const char *str, const char delimiter, char ***dest)
+{
+    *dest = (char**)NULL;
+    uint16_t count = 0;
+    char *buffer = (char *)NULL;
+    uint16_t current_count = 0;
+    uint32_t i = 0;
+    void *tmp;
+    while(true)
+    {
+        if(str[i] == '\0')
+        {
+            if(buffer && current_count > 0)
+            {
+
+                tmp = realloc(buffer, current_count + 1);
+                if(!tmp){goto fail;}
+                buffer = (char*)tmp;
+                tmp = NULL;
+
+                buffer[current_count] = '\0';
+
+                tmp = realloc((*dest), (count + 1) * sizeof(char*));
+                if(!tmp){goto fail;}
+                (*dest) = (char**)tmp;
+                tmp = NULL;
+
+                (*dest)[count] = buffer;
+                
+                buffer = (char *)NULL;
+                
+                count++;
+            }
+            return count;
+        }
+        if(str[i] == delimiter)
+        {
+                if(buffer && current_count > 0)
+                {
+                    tmp = realloc(buffer, current_count + 1);
+                    if(!tmp){goto fail;}
+                    buffer = (char*)tmp;
+                    tmp = NULL;
+
+                    buffer[current_count] = '\0';
+    
+                    tmp = realloc((*dest), (count + 1) * sizeof(char*));
+                    if(!tmp){goto fail;}
+                    (*dest) = (char**)tmp;
+                    tmp = NULL;
+
+                    (*dest)[count] = buffer;
+                    count++;
+                }
+                
+                buffer = (char *)NULL;
+                current_count = 0;
+                i++;            
+        }
+        else
+        {
+            tmp = realloc(buffer, current_count + 1);
+            if(!tmp){goto fail;}
+            buffer = (char*)tmp;
+            tmp = NULL;
+
+            buffer[current_count] = str[i];
+            current_count++;
+            i++;
+
+        }
+    }
+
+    fail:
+    // Free partially built buffer
+    if (buffer)
+        free(buffer);
+
+    // Free already stored tokens
+    if (*dest)
+    {
+        for (uint16_t j = 0; j < count; j++)
+            free((*dest)[j]);
+
+        free(*dest);
+        *dest = (char**)NULL;
+    }
+    return 0;
 }
