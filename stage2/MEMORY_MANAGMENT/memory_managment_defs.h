@@ -14,4 +14,14 @@ typedef struct mem_entry
     uint16_t size;
 } mem_entry;
 
+typedef enum {
+    MEM_OK = 0,
+    MEM_ERR_NOT_INITIALIZED,
+    MEM_ERR_ZERO_SIZE,
+    MEM_ERR_NO_METADATA,
+    MEM_ERR_HEAP_EXHAUSTED,
+    MEM_ERR_INVALID_PTR,
+    MEM_ERR_REALLOC_NOT_FOUND
+} mem_error_t;
+
 #endif
