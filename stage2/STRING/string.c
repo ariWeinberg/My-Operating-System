@@ -3,9 +3,28 @@
 #include "../STD/defs.h"
 #include "../STD/bool.h"
 
+str_error_t str_last_err = STR_ERR_NONE;
+
+void str_set_error(str_error_t err)
+{
+    str_last_err = err;
+}
+
+str_error_t str_get_error(void)
+{
+    return str_last_err;
+}
+
 // optional: simple strlen
 int strlen(const char *s)
 {
+    if (!s)
+    {
+        str_set_error(STR_ERR_INVALID_ARG);
+        return 0;
+    }
+
+    str_set_error(STR_ERR_NONE);
     int len = 0;
     while (*s++) len++;
     return len;
@@ -13,27 +32,60 @@ int strlen(const char *s)
 
 int strcmp(const char *a, const char *b)
 {
-    while(*a && (*a == *b)) { a++; b++; }
+    if (!a || !b)
+    {
+        str_set_error(STR_ERR_INVALID_ARG);
+        return 0;
+    }
+
+    str_set_error(STR_ERR_NONE);
+    while (*a && (*a == *b)) { a++; b++; }
     return *(unsigned char*)a - *(unsigned char*)b;
 }
 
+
 char *strncpy(char *dest, const char *src, int n)
 {
+    if (!dest || !src || n < 0)
+    {
+        str_set_error(STR_ERR_INVALID_ARG);
+        return NULL;
+    }
+
     int i;
-    for(i=0;i<n && src[i]; i++) dest[i]=src[i];
-    for(;i<n;i++) dest[i]=0;
+    for (i = 0; i < n && src[i]; i++)
+        dest[i] = src[i];
+
+    for (; i < n; i++)
+        dest[i] = 0;
+
+    str_set_error(STR_ERR_NONE);
     return dest;
 }
 
+
 char *strncat(char *dest, const char *src, int n)
 {
+    if (!dest || !src || n < 0)
+    {
+        str_set_error(STR_ERR_INVALID_ARG);
+        return NULL;
+    }
+
     int i = 0;
-    while(dest[i]) i++;
-    int j;
-    for(j=0; j<n && src[j]; j++) dest[i+j]=src[j];
-    dest[i+j]=0;
+    while (dest[i])
+        i++;
+
+    int j = 0;
+    for (; j < n && src[j]; j++)
+        dest[i + j] = src[j];
+
+    dest[i + j] = 0;
+
+    str_set_error(STR_ERR_NONE);
     return dest;
 }
+
 
 
 /**
@@ -47,17 +99,33 @@ char *strncat(char *dest, const char *src, int n)
  */
 uint32_t utf16_to_ascii(uint16_t *src, uint32_t len, char *dest)
 {
+    if (!src || !dest)
+    {
+        str_set_error(STR_ERR_INVALID_ARG);
+        return 0;
+    }
+
     for (uint32_t i = 0; i < len; i++)
     {
         uint16_t ch = src[i];
         dest[i] = (ch <= 0x7F) ? (char)ch : '?';
     }
     dest[len] = '\0';
+
+    str_set_error(STR_ERR_NONE);
     return len;
 }
 
+
 uint16_t strsplit(const char *str, const char delimiter, char ***dest)
 {
+    if (!str || !dest)
+    {
+        str_set_error(STR_ERR_INVALID_ARG);
+        return 0;
+    }
+
+    str_set_error(STR_ERR_NONE);
     *dest = (char**)NULL;
     uint16_t count = 0;
     char *buffer = (char *)NULL;
@@ -72,14 +140,22 @@ uint16_t strsplit(const char *str, const char delimiter, char ***dest)
             {
 
                 tmp = realloc(buffer, current_count + 1);
-                if(!tmp){goto fail;}
+                if(!tmp)
+                {
+                    str_set_error(STR_ERR_ALLOC_FAIL);
+                    goto fail;
+                }
                 buffer = (char*)tmp;
                 tmp = NULL;
 
                 buffer[current_count] = '\0';
 
                 tmp = realloc((*dest), (count + 1) * sizeof(char*));
-                if(!tmp){goto fail;}
+                if(!tmp)
+                {
+                    str_set_error(STR_ERR_ALLOC_FAIL);
+                    goto fail;
+                }
                 (*dest) = (char**)tmp;
                 tmp = NULL;
 
@@ -89,21 +165,31 @@ uint16_t strsplit(const char *str, const char delimiter, char ***dest)
                 
                 count++;
             }
+            str_set_error(STR_ERR_NONE);
             return count;
+
         }
         if(str[i] == delimiter)
         {
                 if(buffer && current_count > 0)
                 {
                     tmp = realloc(buffer, current_count + 1);
-                    if(!tmp){goto fail;}
+                    if(!tmp)
+                    {
+                        str_set_error(STR_ERR_ALLOC_FAIL);
+                        goto fail;
+                    }
                     buffer = (char*)tmp;
                     tmp = NULL;
 
                     buffer[current_count] = '\0';
     
                     tmp = realloc((*dest), (count + 1) * sizeof(char*));
-                    if(!tmp){goto fail;}
+                    if(!tmp)
+                    {
+                        str_set_error(STR_ERR_ALLOC_FAIL);
+                        goto fail;
+                    }
                     (*dest) = (char**)tmp;
                     tmp = NULL;
 
@@ -118,7 +204,11 @@ uint16_t strsplit(const char *str, const char delimiter, char ***dest)
         else
         {
             tmp = realloc(buffer, current_count + 1);
-            if(!tmp){goto fail;}
+            if(!tmp)
+            {
+                str_set_error(STR_ERR_ALLOC_FAIL);
+                goto fail;
+            }
             buffer = (char*)tmp;
             tmp = NULL;
 

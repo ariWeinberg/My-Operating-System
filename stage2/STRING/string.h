@@ -1,5 +1,6 @@
-#ifndef STRING
-#define STRING
+#ifndef STRING_H
+#define STRING_H
+
 
 #include "../STD/int.h"
 
@@ -14,4 +15,15 @@ char *strncat(char *dest, const char *src, int n);
 // Returns: number of bytes written (excluding null terminator)
 uint32_t utf16_to_ascii(uint16_t *src, uint32_t len, char *dest);
 uint16_t strsplit(const char *str, const char delimiter, char ***dest);
+
+typedef enum
+{
+    STR_ERR_NONE = 0,
+    STR_ERR_ALLOC_FAIL,
+    STR_ERR_INVALID_ARG,
+    STR_ERR_OVERFLOW,
+    STR_ERR_INTERNAL
+} str_error_t;
+str_error_t str_get_error(void);
+
 #endif
