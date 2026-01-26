@@ -95,26 +95,6 @@ bool load_root_directory(Fat16 *fat)
     return false;
 }
 
-DirEntry *find_file(Fat16 *fat, const char* name)
-{
-    for(uint32_t i =0; i < fat->bs.bpb.root_dir_entries; i++)
-    {
-        switch ((unsigned char)fat->root_dir[i].filename8_3[0])
-        {
-            case 0x00:
-                return NULL;
-            case 0xE5:
-                continue;            
-            default:
-                if(memcmp(name, fat->root_dir[i].filename8_3, 11) == 0)
-                {
-                    return &(fat->root_dir[i]);
-                }
-                break;
-        }
-    }
-    return NULL;
-}
 
 ClusterChain *traverse_chain(Fat16 *fat, uint16_t chain_start)
 {   
@@ -208,53 +188,6 @@ DirEntry *load_dir(Fat16 *fat, DirEntry *directory)
     return dest;
 }
 
-
-DirEntry *find_file_in_directory(Fat16 *fat, DirEntry *directory, const char* name)
-
-{
-    bool must_free = false;
-    DirEntry *dir;
-    uint32_t max_entries;
-    if(directory->first_cluster_high == 0x000 && directory->first_cluster_low == 0x000 )
-    {
-        dir = fat->root_dir;
-        max_entries = fat->bs.bpb.root_dir_entries;        
-    }
-    else
-    {
-        must_free = true;
-        dir = load_dir(fat, directory);
-        max_entries = directory->file_size / 32;        
-    }
-
-    uint32_t i = 0;
-    while(i < max_entries)
-    {
-        switch ((unsigned char)dir[i].filename8_3[0])
-        {
-        case 0x00:
-            if(must_free){free(dir);}
-            return NULL;
-        case 0xE5:
-            break;
-        
-        default:
-            if(memcmp(name, dir[i].filename8_3, 11) == 0)
-            {
-                DirEntry *result = zalloc(sizeof(DirEntry));
-                *result = dir[i];
-                if(must_free){free(dir);}
-                return result;
-
-            }
-            break;
-        }
-        i++;
-    }
-    if(must_free){free(dir);}
-    return NULL;
-}
-
 /**
  * @brief Clear an LFN buffer.
  *
@@ -316,8 +249,40 @@ char *parse_LFN_buffer(LFN_buffer *buffer)
     return name;
 }
 
+char *normalize_SFN(const char sfn[11])
+{
+    // Max length: 8 + 1 + 3 + '\0' = 13
+    char *out = zalloc(13);
+    if (!out)
+        return NULL;
 
-parsed_dir *parse_dir(DirEntry *dir, uint32_t max_entries)
+    int pos = 0;
+
+    // ---- base name (bytes 0–7) ----
+    for (int i = 0; i < 8; i++)
+    {
+        if (sfn[i] == ' ')
+            break;
+        out[pos++] = sfn[i];
+    }
+
+    // ---- extension (bytes 8–10) ----
+    if (sfn[8] != ' ')
+    {
+        out[pos++] = '.';
+        for (int i = 8; i < 11; i++)
+        {
+            if (sfn[i] == ' ')
+                break;
+            out[pos++] = sfn[i];
+        }
+    }
+
+    out[pos] = '\0';
+    return out;
+}
+
+parsed_dir *parse_dir(Fat16 *fat, DirEntry *dir, uint32_t max_entries)
 {
     parsed_dir *pd = zalloc(sizeof(parsed_dir));
     if (!pd)
@@ -356,8 +321,20 @@ parsed_dir *parse_dir(DirEntry *dir, uint32_t max_entries)
         parsed_dir_entry p;
         p.attributes = dir[i].Attributes;
         p.first_cluster = dir[i].first_cluster_low;
-        p.file_size  = dir[i].file_size;
         p.raw_entry  = &dir[i];
+
+        if(dir[i].Attributes & 0x10)
+        {
+            ClusterChain *chain = traverse_chain(fat, dir[i].first_cluster_low);
+            p.file_size = chain->cluster_count * fat->bytes_per_sector * fat->sectors_per_cluster;
+            free(chain->chain);
+            free(chain);
+
+        }
+        else
+        {
+            p.file_size  = dir[i].file_size;
+        }
 
         // Name resolution
         if (lfn_buf.count > 0)
@@ -367,13 +344,7 @@ parsed_dir *parse_dir(DirEntry *dir, uint32_t max_entries)
         else
         {
             // Allocate 8.3 name (11 chars + NULL)
-            p.name = zalloc(12);
-            if (p.name)
-            {
-                for (int j = 0; j < 11; j++)
-                    p.name[j] = dir[i].filename8_3[j];
-                p.name[11] = '\0';
-            }
+            p.name = normalize_SFN(dir[i].filename8_3);
         }
 
         lfn_buffer_clear(&lfn_buf);
@@ -391,6 +362,23 @@ parsed_dir *parse_dir(DirEntry *dir, uint32_t max_entries)
         pd->entries = new_entries;
         pd->entries[pd->count++] = p;
     }
+    static bool a = false;
+    if (!a)
+    {
+    clear_screen();
+    }
+    a = true;
+    // print_string("\n\r parsed dir:\n\r");
+
+    // for (int i = 0; i < pd->count; i++)
+    // {
+    //     char buf[30];
+    //     print_string(pd->entries[i].name);
+    //     print_string(" : ");
+    //     print_string(uint32_to_str(strlen(pd->entries[i].name),buf));
+    //     print_string("\n\r");
+    // }
+    // print_string("\n\r");
 
     return pd;
 }
@@ -411,6 +399,11 @@ parsed_dir_entry *find_parsed_dir_entry(parsed_dir *dir, const char *name)
 {
     for (int i = 0; i < dir->count; i++)
     {
+        print_string("comparing: ");
+        print_string(dir->entries[i].name);
+        print_string(" -to- ");
+        print_string(name);
+        print_string("\n\r");
         if (strcmp(dir->entries[i].name, name) == 0)
         {
             return &dir->entries[i];
@@ -444,26 +437,40 @@ void *load_file(Fat16 *fat, DirEntry *file)
 
 void *open(Fat16 *fat, const char *name)
 {
+    clear_screen();
     void *file = NULL;
     char **name_segments = (char**)NULL;
     bool dir_owned = false;
     uint16_t segments_count = strsplit(name, '/', &name_segments);
     DirEntry *current_dir = fat->root_dir;
-    parsed_dir *current_parsed_dir = parse_dir(current_dir, fat->bs.bpb.root_dir_entries);
+    parsed_dir *current_parsed_dir = parse_dir(fat, current_dir, fat->bs.bpb.root_dir_entries);
+
+
+
+    print_string("name to open: ");
+    print_string(name);
+    print_string("\n\n\r");
     if (current_parsed_dir) // return NULL on parsing error.
     {
         for (uint16_t i = 0; i < segments_count; i++)
         {
+            // print_string("currently parsing: ");
+            // print_string(name_segments[i]);
+            // print_string("\n\r");
+
+
             parsed_dir_entry *e = find_parsed_dir_entry(current_parsed_dir, name_segments[i]);
             if (!e) {break;}
             if((!(e->attributes & 0x10)) && i < (segments_count - 1))  {break;}
             
+            // print_string("entry seems valid!\n\r");
             
             if (i == segments_count - 1 && !(e->attributes & 0x10))
             {
                 file = load_file(fat, e->raw_entry);
                 break;
             }
+            // print_string("entry is not the file!\n\r");
             if(__reload_open(fat, &dir_owned, &current_dir, &current_parsed_dir, e))
             {
                 break;
@@ -481,12 +488,7 @@ void *open(Fat16 *fat, const char *name)
     return file;
 }
 
-bool __reload_open(
-    Fat16 *fat,
-    bool *dir_owned,
-    DirEntry **current_dir,
-    parsed_dir **current_parsed_dir,
-    parsed_dir_entry *e)
+bool __reload_open(Fat16 *fat, bool *dir_owned, DirEntry **current_dir, parsed_dir **current_parsed_dir, parsed_dir_entry *e)
 
 {
     if(*dir_owned)
@@ -495,8 +497,16 @@ bool __reload_open(
     *dir_owned = true;
     if (!*current_dir) {return true;}
     free(*current_parsed_dir);
-    *current_parsed_dir = parse_dir(*current_dir, e->file_size / sizeof(DirEntry));
+    // *current_parsed_dir = parse_dir(*current_dir, e->file_size / sizeof(DirEntry));
+    *current_parsed_dir = parse_dir(fat, *current_dir, round_bytes_to_clusters(fat, e->file_size) / sizeof(DirEntry));
+    // *current_parsed_dir = parse_dir(*current_dir, chain_size_in_clusters * fat->sectors_per_cluster * fat->bytes_per_sector / sizeof(DirEntry));
+
     if(!*current_parsed_dir) {return true;}
 
     return false;
+}
+
+uint32_t round_bytes_to_clusters(Fat16 *fat, uint32_t bytes)
+{
+    return (sectors_to_clusters(fat, bytes_to_sectors(fat, bytes)) * fat->bytes_per_sector * fat->sectors_per_cluster);
 }
