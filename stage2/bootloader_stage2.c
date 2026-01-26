@@ -33,7 +33,16 @@ void c_main()
     fat_init(fat);
     print_string("fat initialized!\n\r");
     
-    
+    void *file = open(fat, "/NEWDIR1/NEWFILE3.TXT");
+    if (file)
+    {
+        print_string("file loaded");
+        print_string("\n\n\r===============\n\r file contents\n\r===============\n\n\r");
+        print_string(file);
+        print_string("\n\n");
+    }
+    else
+    {print_string("file not loaded");}
         
 while (1){;}
 }

@@ -161,7 +161,7 @@ DirEntry *find_file_in_directory(Fat16 *fat, DirEntry *directory, const char* na
  *
  * @warning Caller must free the returned structure using free_parsed_dir().
  */
-parsed_dir *parse_dir(DirEntry *dir, uint32_t max_entries);
+parsed_dir *parse_dir(Fat16 *fat, DirEntry *dir, uint32_t max_entries);
 /**
  * @brief Assemble a full filename from an LFN buffer.
  *
@@ -214,5 +214,7 @@ parsed_dir_entry *find_parsed_dir_entry(parsed_dir *dir, const char *name);
 
 void *load_file(Fat16 *fat, DirEntry *file);
 
+void *open(Fat16 *fat, const char *name);
 bool __reload_open(Fat16 *fat, bool *dir_owned, DirEntry **current_dir, parsed_dir **current_parsed_dir, parsed_dir_entry *e);
+uint32_t round_bytes_to_clusters(Fat16 *fat, uint32_t bytes);
 #endif

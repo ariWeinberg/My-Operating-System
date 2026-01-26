@@ -76,12 +76,6 @@ $(build_dir)/string.o
 $(build_dir)/stage2.bin: $(build_dir)/stage2.elf $(build_dir)/bootloader_stage2.o
 	objcopy -O binary $(build_dir)/stage2.elf $(build_dir)/stage2.bin
 
-
-$(out_dir)/floppy.img: $(build_dir)/bootloader.o $(build_dir)/bootloader_stage2.o
-	dd if=/dev/zero of=floppy.img bs=512 count=2880
-	dd if=$(build_dir)/bootloader.o of=floppy.img conv=notrunc
-	dd if=$(build_dir)/bootloader_stage2.o of=floppy.img conv=notrunc bs=512 seek=1
-
 $(out_dir)/disk.img: $(build_dir)/bootloader.o $(build_dir)/stage2.bin
 	dd if=/dev/zero of=$(out_dir)/disk.img bs=512 count=32768
 	mkfs.fat -F 16 -f 2 -R 30 $(out_dir)/disk.img
@@ -96,24 +90,11 @@ $(out_dir)/disk.img: $(build_dir)/bootloader.o $(build_dir)/stage2.bin
 	mcopy -i $(out_dir)/disk.img $(etc_dir)/test_sub.txt ::/NEWDIR1/NEWFILE3.txt
 	mdel -i $(out_dir)/disk.img ::NEWFILE1
 
-
-
-run: $(out_dir)/floppy.img
-	qemu-system-i386 -fda $(out_dir)/floppy.img
-
-
 run_disk: $(out_dir)/disk.img
 	qemu-system-i386 -drive file=$(out_dir)/disk.img,format=raw
 
 debug_disk: $(out_dir)/disk.img
 	qemu-system-i386 -drive file=$(out_dir)/disk.img,format=raw -s -S
-
-
-
-debug: $(out_dir)/floppy.img
-	qemu-system-i386 -fda $(out_dir)/floppy.img -s -S
-	
-
 
 clean:
 	rm -f $(build_dir)/bootloader.o \
