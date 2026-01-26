@@ -26,9 +26,20 @@ uint8_t fat_init(Fat16 *fat)
     {
         return 1;
     }
-    //
-    // TODO: check for signatures.
-    //
+    if (fat->bs.boot_signature != 0xAA55)
+    {
+        return 2;
+    }
+    if ((fat->bs.ebr.signature != 0x28) && (fat->bs.ebr.signature != 0x29))
+    {
+        // NOTE: Some FAT variants may not set EBR signature (relaxed later)
+        return 3;
+    }
+    if (fat->bs.bpb.Bytes_per_sector == 0 || fat->bs.bpb.sectors_per_cluster == 0 || fat->bs.bpb.sectors_per_FAT == 0)
+    {
+        return 4;
+    }
+    
     fat->bytes_per_sector = fat->bs.bpb.Bytes_per_sector;
     fat->sectors_per_cluster = fat->bs.bpb.sectors_per_cluster;
 
@@ -49,12 +60,13 @@ uint8_t fat_init(Fat16 *fat)
     if(load_fat(fat))
     {
         free(fat->fat);
-        return 2;
+        return 5;
     }
     if(load_root_directory(fat))
     {
+        free(fat->fat);
         free(fat->root_dir);
-        return 3;
+        return 5;
     }
 
     return 0;
