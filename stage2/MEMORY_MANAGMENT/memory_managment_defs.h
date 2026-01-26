@@ -3,8 +3,12 @@
 
 #include "../STD/int.h"
 
-#define HEAP_BASE   0xF000
 #define TABLE_BASE  0xE000
+
+#define HEAP_BASE   0xF000
+#define HEAP_SIZE  0xF0000          /* 4 KB heap */
+#define HEAP_LIMIT (HEAP_BASE + HEAP_SIZE)
+
 #define TABLE_SIZE  0x0FFF          // 4 KB metadata
 #define MAX_ENTRIES (TABLE_SIZE / 4)
 
