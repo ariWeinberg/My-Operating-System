@@ -3,8 +3,8 @@
 
 uint32_t video_memory_base = 0xB8000;
 
-uint8_t columns = 80;
-uint8_t rows = 25;
+const uint8_t columns = 80;
+const uint8_t rows = 25;
 
 
 uint8_t cursor_x = 0;
@@ -12,10 +12,13 @@ uint8_t cursor_y = 0;
 
 void clear_screen()
 {
-    for(int i = 0; i < rows * columns; i++)
-    {
-        put_char(" "[0], 0x00);
+    uint8_t *vmem = (uint8_t*)video_memory_base;
+
+    for (int i = 0; i < rows * columns; i++) {
+        vmem[i * 2]     = ' ';
+        vmem[i * 2 + 1] = 0x00;
     }
+
     cursor_x = 0;
     cursor_y = 0;
 }
@@ -38,6 +41,7 @@ void put_char(char c, uint8_t color)
     case 0x0:
         return;
     case 10:
+        cursor_x = 0;
         cursor_y = (cursor_y + 1) % rows;
         return;
     case 13:

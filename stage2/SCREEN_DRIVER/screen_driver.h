@@ -1,5 +1,5 @@
-#ifndef SCREEN_DRIVER
-#define SCREEN_DRIVER
+#ifndef SCREEN_DRIVER_H
+#define SCREEN_DRIVER_H
 #include "../STD/int.h"
 
 void put_char(char c, uint8_t color);
