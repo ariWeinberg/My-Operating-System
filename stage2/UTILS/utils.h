@@ -2,7 +2,6 @@
 #define UTILS
 
 #include "../STD/int.h"
-#include "../SCREEN_DRIVER/screen_driver.h"
 
 char *uint16_to_str(uint16_t value, char *buffer);
 uint32_t combine_u16_to_u32(uint16_t hi, uint16_t lo);

@@ -2,7 +2,7 @@ build_dir=../../build
 UTILS_dir=.
 
 # Compile FAT16 main file
-$(build_dir)/asm_utils.o: $(UTILS_dir)/utils.c $(UTILS_dir)/asm_utils.h
+$(build_dir)/asm_utils.o: $(UTILS_dir)/asm_utils.c $(UTILS_dir)/asm_utils.h
 	gcc -m32 -g -ffreestanding -fno-pic -fno-pie -nostdlib -nostartfiles -nodefaultlibs \
         -I../../stage2 -c $(UTILS_dir)/asm_utils.c -o $(build_dir)/asm_utils.o
 
