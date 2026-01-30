@@ -1,10 +1,8 @@
-#ifndef ATA_DRIVER
-#define ATA_DRIVER
-#include "../STD/int.h"
-
-
-
-#include "ata_defs.h"
+#ifndef ATA_DRIVER_H
+#define ATA_DRIVER_H
+#include "ata_helpers.h"
+#include "ata_error.h"
+#include "ata_identify_result.h"
 
 
 
@@ -22,16 +20,11 @@ extern DEVICE ata_primary;
 
 int detect_devtype (int slavebit, DEVICE *ctrl);
 void ata_soft_reset(uint16_t dcr_port);
-void ata_init();
-int ata_identify(uint16_t *identify_result);
-int test_floating();
-void clear_HOB_bits();
+int ata_init();
+int ata_identify(DEVICE *drv, ata_identify_u *identify_result);
 int test_if_drive_exists();
-void read_sector(uint32_t lba, void *dest);
-void read_bytes(void *dest, uint32_t bytes, uint32_t lba_start);
-void pio28_read(void *dest, void *drv, uint32_t sectors, uint16_t io_base, uint32_t abs_lba);
+int pio28_read(void *dest, DEVICE *drv, uint32_t sectors, uint16_t io_base, uint32_t abs_lba);
 void ata_wait_400ns(uint16_t io_base);
-
-
-void read_bytes(void *dest, uint32_t sectors, uint32_t lba);
+int ata_get_last_error(void);
+void ata_soft_reset(uint16_t dcr_port);
 #endif

@@ -35,7 +35,7 @@ $(build_dir)/memory_managment.o:
 	$(MAKE) -C $(MEMORY_MANAGMENT_dir) all
 
 # Build ata_driver module via its own Makefile
-$(build_dir)/ata_driver.o:
+$(build_dir)/ata_driver.o $(build_dir)/ata_helpers.o $(build_dir)/pio_read28.o $(build_dir)/ata_error.o $(build_dir)/ata_identify.o:
 	$(MAKE) -C $(ATA_DRIVER_dir) all
 
 # Build ata_driver module via its own Makefile
@@ -59,7 +59,11 @@ $(build_dir)/ata_driver.o \
 $(build_dir)/utils.o \
 $(build_dir)/asm_utils.o \
 $(build_dir)/screen_driver.o \
-$(build_dir)/string.o
+$(build_dir)/string.o \
+$(build_dir)/pio_read28.o \
+$(build_dir)/ata_helpers.o \
+$(build_dir)/ata_error.o \
+$(build_dir)/ata_identify.o
 	ld -m elf_i386 -T $(etc_dir)/linker.ld \
 	$(build_dir)/bootloader_stage2.o \
 	$(build_dir)/kernel.o \
@@ -71,6 +75,10 @@ $(build_dir)/string.o
 	$(build_dir)/asm_utils.o \
 	$(build_dir)/screen_driver.o \
 	$(build_dir)/string.o \
+	$(build_dir)/ata_helpers.o \
+	$(build_dir)/pio_read28.o \
+	$(build_dir)/ata_error.o \
+	$(build_dir)/ata_identify.o \
 	-o	$(build_dir)/stage2.elf
 
 $(build_dir)/stage2.bin: $(build_dir)/stage2.elf $(build_dir)/bootloader_stage2.o
@@ -78,7 +86,7 @@ $(build_dir)/stage2.bin: $(build_dir)/stage2.elf $(build_dir)/bootloader_stage2.
 
 $(out_dir)/disk.img: $(build_dir)/bootloader.o $(build_dir)/stage2.bin
 	dd if=/dev/zero of=$(out_dir)/disk.img bs=512 count=32768
-	mkfs.fat -F 16 -f 2 -R 30 $(out_dir)/disk.img
+	mkfs.fat -F 16 -f 2 -R 50 $(out_dir)/disk.img
 	dd if=$(build_dir)/bootloader.o of=$(out_dir)/disk.img conv=notrunc bs=1 seek=61 skip=61
 	dd if=$(build_dir)/stage2.bin of=$(out_dir)/disk.img conv=notrunc bs=512 seek=1
 	mmd -i $(out_dir)/disk.img ::NEWDIR1
@@ -113,4 +121,8 @@ clean:
 	$(build_dir)/stage2.bin \
 	$(build_dir)/stage2.elf \
 	$(build_dir)/screen_driver.o \
-	$(build_dir)/string.o 
+	$(build_dir)/string.o \
+	$(build_dir)/ata_helpers.o \
+	$(build_dir)/pio_read28.o \
+	$(build_dir)/ata_error.o \
+	$(build_dir)/ata_identify.o

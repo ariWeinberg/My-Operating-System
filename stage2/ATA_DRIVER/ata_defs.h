@@ -19,12 +19,28 @@
 #define REG_SECCOUNT    2   /* 0x1F2 */
 #define REG_LBA_LO      3   /* 0x1F3 */
 #define REG_CYL_LO      4   /* 0x1F4 */
+#define REG_LBA_MID      4   /* 0x1F4 */
 #define REG_CYL_HI      5   /* 0x1F5 */
+#define REG_LBA_HI      5   /* 0x1F5 */
 #define REG_DEVSEL      6   /* 0x1F6 */
 #define REG_STATUS      7   /* 0x1F7 (read) */
 #define REG_COMMAND     7   /* 0x1F7 (write) */
 
 #define NO_ATA_IDENTIFY_DEBUG_PRINT_INFO
 #define NO_ATA_IDENTIFY_DEBUG_PRINT_ERR
+
+#define ATA_TIMEOUT_BSY   100000
+#define ATA_TIMEOUT_DRQ   100000
+
+typedef enum {
+    ATA_ERR_NONE = 0,
+    ATA_ERR_NO_DEVICE,
+    ATA_ERR_NOT_ATA,
+    ATA_ERR_DEVICE_FAULT,
+    ATA_ERR_TIMEOUT,
+    ATA_ERR_NO_MEMORY,
+    ATA_ERR_INVALID_ARG
+
+} ata_error_t;
 
 #endif

@@ -9,7 +9,8 @@
 
 
 
-uint16_t identify_result[256]; 
+// uint16_t identify_result[256];
+ata_identify_u identify_result;
 Fat16 *fat;
 
 
@@ -23,7 +24,7 @@ void c_main()
     print_string("\n\r");
 
     ata_init();
-    ata_identify(identify_result);
+    ata_identify(&ata_primary, &identify_result);
     
     clear_screen();
     print_string("test print\n\r");
@@ -43,6 +44,7 @@ void c_main()
     }
     else
     {print_string("file not loaded");}
+
         
 while (1){;}
 }

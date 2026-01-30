@@ -77,7 +77,7 @@ load_sectors:
 
     .load_retry:
         mov ah, 0x02        ; BIOS read sectors
-        mov al, 30           ; number of sectors
+        mov al, 50           ; number of sectors
         mov ch, 0           ; cylinder
         mov cl, 2           ; sector (starts at 1)
         mov dh, 0           ; head
