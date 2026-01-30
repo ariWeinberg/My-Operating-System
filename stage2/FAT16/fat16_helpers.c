@@ -17,7 +17,7 @@
 
 #include "fat16_helpers.h"
 
-#include "../ATA_DRIVER/ata_driver.h"
+#include "../ATA_DRIVER/ATA.h"
 #include "../MEMORY_MANAGMENT/memory_managment.h"
 
 // 

@@ -1,3 +1,5 @@
+#ifndef ATA_DRIVER_H
+#define ATA_DRIVER_H
 #include "../STD/int.h"
 #pragma pack(push, 1)
 
@@ -216,3 +218,108 @@ typedef union ata_identify_result {
     ata_identify_t fields;
 
 } ata_identify_u;
+
+
+
+
+#define ATA_PRIMARY_BASE     0x1F0
+#define ATA_PRIMARY_DEVCTL   0x3F6
+
+/* differentiate ATA, ATAPI, SATA and SATAPI */
+#define ATADEV_PATAPI 5
+#define ATADEV_SATAPI 4
+#define ATADEV_PATA 3
+#define ATADEV_SATA 2
+#define ATADEV_UNKNOWN 1
+
+
+/* ATA command block register offsets */
+#define REG_DATA        0   /* 0x1F0 */
+#define REG_ERROR       1   /* 0x1F1 (read) */
+#define REG_FEATURES    1   /* 0x1F1 (write) */
+#define REG_SECCOUNT    2   /* 0x1F2 */
+#define REG_LBA_LO      3   /* 0x1F3 */
+#define REG_CYL_LO      4   /* 0x1F4 */
+#define REG_LBA_MID      4   /* 0x1F4 */
+#define REG_CYL_HI      5   /* 0x1F5 */
+#define REG_LBA_HI      5   /* 0x1F5 */
+#define REG_DEVSEL      6   /* 0x1F6 */
+#define REG_STATUS      7   /* 0x1F7 (read) */
+#define REG_COMMAND     7   /* 0x1F7 (write) */
+
+#define NO_ATA_IDENTIFY_DEBUG_PRINT_INFO
+#define NO_ATA_IDENTIFY_DEBUG_PRINT_ERR
+
+#define ATA_TIMEOUT_BSY   100000
+#define ATA_TIMEOUT_DRQ   100000
+
+typedef enum {
+    ATA_ERR_NONE = 0,
+    ATA_ERR_NO_DEVICE,
+    ATA_ERR_NOT_ATA,
+    ATA_ERR_DEVICE_FAULT,
+    ATA_ERR_TIMEOUT,
+    ATA_ERR_NO_MEMORY,
+    ATA_ERR_INVALID_ARG
+
+} ata_error_t;
+
+
+#include "../STD/int.h"
+
+uint32_t ata_u32(uint16_t lo, uint16_t hi);
+int ata_wait_not_bsy(uint16_t io_base);
+int ata_wait_drq(uint16_t io_base);
+const char *devtype_to_string(int type);
+
+
+
+
+// extern void ata_soft_reset(uint16_t dev_ctl);
+void ata_soft_reset(uint16_t dcr_port); 
+
+const char *devtype_to_string(int type);
+typedef struct DEVICE {
+    uint16_t base;     /* Command block base (e.g. 0x1F0 or 0x170) */
+    uint16_t dev_ctl;  /* Control block base (e.g. 0x3F6 or 0x376) */
+} DEVICE;
+
+extern DEVICE ata_primary;
+
+typedef enum ata_error_type
+{
+    ok = 0,
+    AMNF = 1,
+    TKZNF = 2,
+    ABRT = 4,
+    MCR = 8,
+    IDNF = 16,
+    MC = 32,
+    UNC = 64,
+    BBK = 128,
+    ERROR = 512,
+    INVALID_ARGUMENT = 1024,
+    ERROR_WHILE_DRQ_POLL,
+    DRQ_TIMEOUT,
+    BUS_FLOAT,
+    DEVICE_DOES_NOT_EXIST,
+    
+    
+
+} ata_error_type;
+
+ata_error_type get_ata_last_error();
+void set_ata_last_error(ata_error_type e);
+
+
+
+int detect_devtype (int slavebit, DEVICE *ctrl);
+void ata_soft_reset(uint16_t dcr_port);
+int ata_init();
+int ata_identify(DEVICE *drv, ata_identify_u *identify_result);
+int test_if_drive_exists();
+int pio28_read(void *dest, DEVICE *drv, uint32_t sectors, uint16_t io_base, uint32_t abs_lba);
+void ata_wait_400ns(uint16_t io_base);
+int ata_get_last_error(void);
+void ata_soft_reset(uint16_t dcr_port);
+#endif

@@ -16,7 +16,7 @@
 //   - Implement validation: boot signature, FAT signature, FAT type
 //   - Improve error handling for I/O operations and corrupted FAT entries
 #include "fat16.h"
-#include "../ATA_DRIVER/ata_driver.h"
+#include "../ATA_DRIVER/ATA.h"
 #include "../MEMORY_MANAGMENT/memory_managment.h"
 #include "../UTILS/utils.h"
 #include "../STRING/string.h"

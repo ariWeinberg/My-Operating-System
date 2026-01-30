@@ -1,4 +1,4 @@
-#include "ata_error.h"
+#include "ATA.h"
 
 ata_error_type ata_last_error = ok;
 
