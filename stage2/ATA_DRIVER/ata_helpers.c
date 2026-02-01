@@ -62,3 +62,7 @@ const char *devtype_to_string(int type) {
     }
 }
 
+void ata_wait_400ns(uint16_t io_base)
+{
+    inb(io_base + REG_STATUS); inb(io_base + REG_STATUS); inb(io_base + REG_STATUS); inb(io_base + REG_STATUS);
+}
