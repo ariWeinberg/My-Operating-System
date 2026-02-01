@@ -13,6 +13,7 @@ DEVICE ata_primary = {
 
 int test_floating();
 void clear_HOB_bits();
+int test_if_drive_exists();
 
 int ata_init()
 {

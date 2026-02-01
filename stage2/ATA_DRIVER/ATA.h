@@ -272,12 +272,6 @@ int ata_wait_not_bsy(uint16_t io_base);
 int ata_wait_drq(uint16_t io_base);
 const char *devtype_to_string(int type);
 
-
-
-
-// extern void ata_soft_reset(uint16_t dev_ctl);
-void ata_soft_reset(uint16_t dcr_port); 
-
 const char *devtype_to_string(int type);
 typedef struct DEVICE {
     uint16_t base;     /* Command block base (e.g. 0x1F0 or 0x170) */
@@ -289,6 +283,8 @@ extern DEVICE ata_primary;
 typedef enum ata_error_type
 {
     ok = 0,
+
+    /* ATA status / error register bits */
     AMNF = 1,
     TKZNF = 2,
     ABRT = 4,
@@ -297,29 +293,34 @@ typedef enum ata_error_type
     MC = 32,
     UNC = 64,
     BBK = 128,
+
+    /* generic */
     ERROR = 512,
     INVALID_ARGUMENT = 1024,
-    ERROR_WHILE_DRQ_POLL,
+
+    /* polling / timing */
     DRQ_TIMEOUT,
+    BSY_TIMEOUT,
+    DEVICE_FAULT,
     BUS_FLOAT,
     DEVICE_DOES_NOT_EXIST,
-    
-    
+    ERROR_WHILE_DRQ_POLL,
 
 } ata_error_type;
 
+
 ata_error_type get_ata_last_error();
 void set_ata_last_error(ata_error_type e);
-
+int ata_ok(void);
+int ata_fail(ata_error_type e);
 
 
 int detect_devtype (int slavebit, DEVICE *ctrl);
-void ata_soft_reset(uint16_t dcr_port);
+int ata_soft_reset(uint16_t dcr_port);
 int ata_init();
 int ata_identify(DEVICE *drv, ata_identify_u *identify_result);
 int test_if_drive_exists();
 int pio28_read(void *dest, DEVICE *drv, uint32_t sectors, uint16_t io_base, uint32_t abs_lba);
 void ata_wait_400ns(uint16_t io_base);
 int ata_get_last_error(void);
-void ata_soft_reset(uint16_t dcr_port);
 #endif
