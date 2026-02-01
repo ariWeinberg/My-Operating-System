@@ -1,4 +1,5 @@
 #include "ATA.h"
+#include "../UTILS/asm_utils.h"
 
 /* Returns: 
    >=0  -> device type (ATADEV_*)

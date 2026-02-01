@@ -1,20 +1,3 @@
-// ===== FILE: fat16.c =====
-// Purpose: Implements the core FAT16 filesystem operations declared in fat16.h.
-//
-// Functions (Defined):
-//   fat_init, read_boot_sector, load_fat, load_root_directory
-//   find_file, read_cluster
-//   traverse_chain, load_cluster_chain, load_dir, find_file_in_directory
-//
-// Dependencies: fat16.h, ata_driver.h, memory_managment.h
-// Notes: Handles boot sector reading, FAT table loading, root directory parsing, cluster chain traversal, 
-//        and file/directory reading. Integrates helpers and on-disk structures.
-// TODOs:
-//   - Implement LFN support
-//   - Handle . and .. directories
-//   - Implement FAT mirroring and loop detection
-//   - Implement validation: boot signature, FAT signature, FAT type
-//   - Improve error handling for I/O operations and corrupted FAT entries
 #include "fat16.h"
 #include "../ATA_DRIVER/ATA.h"
 #include "../MEMORY_MANAGMENT/memory_managment.h"
@@ -24,20 +7,20 @@ uint8_t fat_init(Fat16 *fat)
 {
     if (read_boot_sector(fat))
     {
-        return 1;
+        return fat16_fail(BOOT_SECTOR_READ_FAIL);
     }
     if (fat->bs.boot_signature != 0xAA55)
     {
-        return 2;
+        return fat16_fail(INVALID_BOOT_SIGNATURE);
     }
     if ((fat->bs.ebr.signature != 0x28) && (fat->bs.ebr.signature != 0x29))
     {
         // NOTE: Some FAT variants may not set EBR signature (relaxed later)
-        return 3;
+        return fat16_fail(INVALID_EBR_SIGNATURE);
     }
     if (fat->bs.bpb.Bytes_per_sector == 0 || fat->bs.bpb.sectors_per_cluster == 0 || fat->bs.bpb.sectors_per_FAT == 0)
     {
-        return 4;
+        return fat16_fail(CRITICAL_BPB_VALUE_IS_ZERO);
     }
     
     fat->bytes_per_sector = fat->bs.bpb.Bytes_per_sector;
@@ -60,16 +43,16 @@ uint8_t fat_init(Fat16 *fat)
     if(load_fat(fat))
     {
         free(fat->fat);
-        return 5;
+        return fat16_fail(FAT_LOAD_FAIL);
     }
     if(load_root_directory(fat))
     {
         free(fat->fat);
         free(fat->root_dir);
-        return 5;
+        return fat16_fail(ROOT_DIRECTORY_LOAD_FAIL);
     }
 
-    return 0;
+    return fat16_ok();
 }
 
 bool read_boot_sector(Fat16 *fat)
@@ -188,13 +171,7 @@ DirEntry *load_dir(Fat16 *fat, DirEntry *directory)
     return dest;
 }
 
-/**
- * @brief Clear an LFN buffer.
- *
- * Resets the internal LFN entry count.
- *
- * @param buf Pointer to LFN_buffer structure.
- */
+
 static inline void lfn_buffer_clear(LFN_buffer *buf)
 {
     buf->count = 0;
@@ -362,24 +339,6 @@ parsed_dir *parse_dir(Fat16 *fat, DirEntry *dir, uint32_t max_entries)
         pd->entries = new_entries;
         pd->entries[pd->count++] = p;
     }
-    static bool a = false;
-    if (!a)
-    {
-    clear_screen();
-    }
-    a = true;
-    // print_string("\n\r parsed dir:\n\r");
-
-    // for (int i = 0; i < pd->count; i++)
-    // {
-    //     char buf[30];
-    //     print_string(pd->entries[i].name);
-    //     print_string(" : ");
-    //     print_string(uint32_to_str(strlen(pd->entries[i].name),buf));
-    //     print_string("\n\r");
-    // }
-    // print_string("\n\r");
-
     return pd;
 }
 
@@ -399,11 +358,6 @@ parsed_dir_entry *find_parsed_dir_entry(parsed_dir *dir, const char *name)
 {
     for (int i = 0; i < dir->count; i++)
     {
-        print_string("comparing: ");
-        print_string(dir->entries[i].name);
-        print_string(" -to- ");
-        print_string(name);
-        print_string("\n\r");
         if (strcmp(dir->entries[i].name, name) == 0)
         {
             return &dir->entries[i];
@@ -437,7 +391,6 @@ void *load_file(Fat16 *fat, DirEntry *file)
 
 void *open(Fat16 *fat, const char *name)
 {
-    clear_screen();
     void *file = NULL;
     char **name_segments = (char**)NULL;
     bool dir_owned = false;
@@ -446,31 +399,20 @@ void *open(Fat16 *fat, const char *name)
     parsed_dir *current_parsed_dir = parse_dir(fat, current_dir, fat->bs.bpb.root_dir_entries);
 
 
-
-    print_string("name to open: ");
-    print_string(name);
-    print_string("\n\n\r");
     if (current_parsed_dir) // return NULL on parsing error.
     {
         for (uint16_t i = 0; i < segments_count; i++)
         {
-            // print_string("currently parsing: ");
-            // print_string(name_segments[i]);
-            // print_string("\n\r");
-
-
             parsed_dir_entry *e = find_parsed_dir_entry(current_parsed_dir, name_segments[i]);
             if (!e) {break;}
             if((!(e->attributes & 0x10)) && i < (segments_count - 1))  {break;}
-            
-            // print_string("entry seems valid!\n\r");
             
             if (i == segments_count - 1 && !(e->attributes & 0x10))
             {
                 file = load_file(fat, e->raw_entry);
                 break;
             }
-            // print_string("entry is not the file!\n\r");
+            
             if(__reload_open(fat, &dir_owned, &current_dir, &current_parsed_dir, e))
             {
                 break;
@@ -497,16 +439,9 @@ bool __reload_open(Fat16 *fat, bool *dir_owned, DirEntry **current_dir, parsed_d
     *dir_owned = true;
     if (!*current_dir) {return true;}
     free(*current_parsed_dir);
-    // *current_parsed_dir = parse_dir(*current_dir, e->file_size / sizeof(DirEntry));
     *current_parsed_dir = parse_dir(fat, *current_dir, round_bytes_to_clusters(fat, e->file_size) / sizeof(DirEntry));
-    // *current_parsed_dir = parse_dir(*current_dir, chain_size_in_clusters * fat->sectors_per_cluster * fat->bytes_per_sector / sizeof(DirEntry));
 
     if(!*current_parsed_dir) {return true;}
 
     return false;
-}
-
-uint32_t round_bytes_to_clusters(Fat16 *fat, uint32_t bytes)
-{
-    return (sectors_to_clusters(fat, bytes_to_sectors(fat, bytes)) * fat->bytes_per_sector * fat->sectors_per_cluster);
 }
