@@ -49,7 +49,7 @@ int ata_wait_drq(uint16_t io_base)
         if (status & 0x08)  /* DRQ */
             return 0;
     }
-    return -2; /* timeout */
+    return ata_fail(DRQ_TIMEOUT); /* timeout */
 }
 
 const char *devtype_to_string(int type) {

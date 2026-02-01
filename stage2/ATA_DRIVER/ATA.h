@@ -219,6 +219,60 @@ typedef union ata_identify_result {
 
 } ata_identify_u;
 
+typedef enum ata_command
+{
+    NOP = 0x00,
+    CFA_REQUEST_EXTENDED_ERROR_CODE = 0x03,
+    DATA_SET_MANAGEMENT = 0x06,
+    DATA_SET_MANAGEMENT_XL = 0x07,
+    DEVICE_RESET = 0x08,
+    REQUEST_SENSE_DATA_EXT = 0x0B,
+    RECALIBRATE = 0x10,
+    RECALIBRATE1 = 0x11,
+    GET_PHYSICAL_ELEMENT_STATUS = 0x12,
+    RECALIBRATE2 = 0x12,
+    RECALIBRATE3 = 0x13,
+    RECALIBRATE4 = 0x14,
+    RECALIBRATE5 = 0x15,
+    RECALIBRATE6 = 0x16,
+    RECALIBRATE7 = 0x17,
+    RECALIBRATE8 = 0x18,
+    RECALIBRATE9 = 0x19,
+    RECALIBRATE10 = 0x1A,
+    RECALIBRATE11 = 0x1B,
+    RECALIBRATE12 = 0x1C,
+    RECALIBRATE13 = 0x1D,
+    RECALIBRATE14 = 0x1E,
+    RECALIBRATE15 = 0x1F,
+    READ_SECTOR_S = 0x20,
+    READ_SECTOR_S_NO_RETRY = 0x21,
+    READ_LONG = 0x22,
+    READ_LONG_NO_RETRY = 0x23,
+    READ_SECTOR_S_EXT = 0x24,
+
+
+    
+
+} ata_command;
+typedef enum ata_mode
+{
+    chs = 0,
+    lba
+} ata_mode;
+typedef enum ata_drive_type
+{
+    master = 0,
+    slave
+} ata_drive_type;
+typedef struct DEVICE_EXTENDED_28
+{
+    uint8_t sector_count;
+    uint8_t lba_low;
+    uint8_t lba_mid;
+    uint8_t lba_high;
+    uint8_t dev_sel;
+    uint8_t command;
+} DEVICE_EXTENDED_28;
 
 
 
@@ -320,7 +374,7 @@ int ata_soft_reset(uint16_t dcr_port);
 int ata_init();
 int ata_identify(DEVICE *drv, ata_identify_u *identify_result);
 int test_if_drive_exists();
-int pio28_read(void *dest, DEVICE *drv, uint32_t sectors, uint16_t io_base, uint32_t abs_lba);
+int pio28_read(void *dest, DEVICE *drv, uint32_t sectors, uint32_t abs_lba);
 void ata_wait_400ns(uint16_t io_base);
 int ata_get_last_error(void);
 #endif

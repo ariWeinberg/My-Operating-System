@@ -74,7 +74,7 @@ uint8_t fat_init(Fat16 *fat)
 
 bool read_boot_sector(Fat16 *fat)
 {
-    pio28_read(&(fat->bs), &ata_primary, 1, ATA_PRIMARY_BASE, 0);
+    pio28_read(&(fat->bs), &ata_primary, 1, 0);
     return false;
 }
 
@@ -84,14 +84,14 @@ bool load_fat(Fat16 *fat)
     fat->fat = zalloc(fat->fat_sectors * fat->bytes_per_sector);
     
     // Fat16 entries are little-endian; code assumes LE CPU
-    pio28_read(fat->fat, &ata_primary, fat->fat_sectors, ATA_PRIMARY_BASE, fat->fat_start_lba);
+    pio28_read(fat->fat, &ata_primary, fat->fat_sectors, fat->fat_start_lba);
     return false;
 }
 
 bool load_root_directory(Fat16 *fat)
 {
     fat->root_dir = zalloc(fat->root_dir_sectors * fat->bytes_per_sector);
-    pio28_read(fat->root_dir, &ata_primary, fat->root_dir_sectors, ATA_PRIMARY_BASE, fat->root_dir_start_lba);
+    pio28_read(fat->root_dir, &ata_primary, fat->root_dir_sectors, fat->root_dir_start_lba);
     return false;
 }
 

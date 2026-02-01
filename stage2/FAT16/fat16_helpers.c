@@ -65,7 +65,7 @@ bool read_cluster(Fat16 *fat, uint16_t cluster, uint8_t *dest)
     {
         return true;
     }
-    pio28_read(dest, &ata_primary, fat->sectors_per_cluster, ATA_PRIMARY_BASE, lba);
+    pio28_read(dest, &ata_primary, fat->sectors_per_cluster, lba);
     // 
     // TODO: implement error checking and handleing...
     // 
