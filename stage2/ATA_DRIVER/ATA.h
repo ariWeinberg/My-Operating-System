@@ -373,7 +373,6 @@ int detect_devtype (int slavebit, DEVICE *ctrl);
 int ata_soft_reset(uint16_t dcr_port);
 int ata_init();
 int ata_identify(DEVICE *drv, ata_identify_u *identify_result);
-int test_if_drive_exists();
 int pio28_read(void *dest, DEVICE *drv, uint32_t sectors, uint32_t abs_lba);
 void ata_wait_400ns(uint16_t io_base);
 int ata_get_last_error(void);

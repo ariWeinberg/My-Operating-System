@@ -1,66 +1,55 @@
-
 #include "ATA.h"
 #include "../UTILS/asm_utils.h"
 #include "../MEMORY_MANAGMENT/memory_managment.h"
 #include "../UTILS/utils.h"
 #include "../SCREEN_DRIVER/screen_driver.h"
 
-
 DEVICE ata_primary = {
     .base    = ATA_PRIMARY_BASE,
     .dev_ctl = ATA_PRIMARY_DEVCTL
 };
 
-int test_floating();
-void clear_HOB_bits();
-int test_if_drive_exists();
+static void clear_HOB_bits(void);
+static int test_floating(void);
+static int test_if_drive_exists(void);
 
-int ata_init()
+int ata_init(void)
 {
     clear_HOB_bits();
 
-    if(test_floating())
-    {
-        set_ata_last_error(BUS_FLOAT);
-        return -1;
-    }
+    if (test_floating())
+        return ata_fail(BUS_FLOAT);
 
-    if(test_if_drive_exists())
-    {
-        set_ata_last_error(DEVICE_DOES_NOT_EXIST);
-        return -2;
-    }
+    if (test_if_drive_exists())
+        return ata_fail(DEVICE_DOES_NOT_EXIST);
+
+    return ata_ok();
 }
 
-int test_floating()
+static int test_floating(void)
 {
     uint8_t status = inb(ATA_PRIMARY_BASE + REG_STATUS);
-    if(status == 0xff)
-    {
-        return 1;
-    }
-    return 0;
+    return (status == 0xFF);
 }
 
-void clear_HOB_bits()
+static void clear_HOB_bits(void)
 {
     uint8_t val = inb(ATA_PRIMARY_DEVCTL);
-    // val = val ^ 0b10000000;
-    val &= ~0x80;
+    val &= ~0x80;             // clear HOB bit
     outb(ATA_PRIMARY_DEVCTL, val);
 }
 
-int test_if_drive_exists()
+static int test_if_drive_exists(void)
 {
-    outb(0x172, 0x8b);
+    /* write known pattern to test registers */
+    outb(0x172, 0x8B);
     outb(0x173, 0x73);
     outb(0x174, 0x74);
 
-    if(inb(0x172) != 0x8b)
-        {return 1;}
-    if(inb(0x173) != 0x73)
-        {return 2;}
-    if(inb(0x174) != 0x74)
-        {return 3;}
-    return 0;
+    /* read back */
+    if (inb(0x172) != 0x8B) return 1;
+    if (inb(0x173) != 0x73) return 1;
+    if (inb(0x174) != 0x74) return 1;
+
+    return 0;  // drive exists
 }

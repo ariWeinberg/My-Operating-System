@@ -1,6 +1,6 @@
 #include "ATA.h"
 
-ata_error_type ata_last_error = ok;
+static ata_error_type ata_last_error = ok;
 
 ata_error_type get_ata_last_error()
 {
@@ -12,13 +12,13 @@ void set_ata_last_error(ata_error_type e)
     ata_last_error = e;
 }
 
-int ata_ok(void)
+inline int ata_ok(void)
 {
     set_ata_last_error(ok);
     return 0;
 }
 
-int ata_fail(ata_error_type e)
+inline int ata_fail(ata_error_type e)
 {
     set_ata_last_error(e);
     return -1;
