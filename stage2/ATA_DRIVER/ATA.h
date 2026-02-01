@@ -2,7 +2,6 @@
 #define ATA_DRIVER_H
 #include "../STD/int.h"
 #pragma pack(push, 1)
-
 typedef struct ata_identify {
 
     /* 0 */
@@ -211,6 +210,11 @@ typedef struct ata_identify {
 
 #pragma pack(pop)
 
+typedef enum
+{ 
+    PRIMARY=0,
+    SECONDARY=1
+} ata_bus_t;
 
 typedef union ata_identify_result {
 
@@ -249,21 +253,20 @@ typedef enum ata_command
     READ_LONG = 0x22,
     READ_LONG_NO_RETRY = 0x23,
     READ_SECTOR_S_EXT = 0x24,
-
-
-    
-
 } ata_command;
+
 typedef enum ata_mode
 {
     chs = 0,
     lba
 } ata_mode;
+
 typedef enum ata_drive_type
 {
     master = 0,
     slave
 } ata_drive_type;
+
 typedef struct DEVICE_EXTENDED_28
 {
     uint8_t sector_count;
@@ -273,66 +276,6 @@ typedef struct DEVICE_EXTENDED_28
     uint8_t dev_sel;
     uint8_t command;
 } DEVICE_EXTENDED_28;
-
-
-
-#define ATA_PRIMARY_BASE     0x1F0
-#define ATA_PRIMARY_DEVCTL   0x3F6
-
-/* differentiate ATA, ATAPI, SATA and SATAPI */
-#define ATADEV_PATAPI 5
-#define ATADEV_SATAPI 4
-#define ATADEV_PATA 3
-#define ATADEV_SATA 2
-#define ATADEV_UNKNOWN 1
-
-
-/* ATA command block register offsets */
-#define REG_DATA        0   /* 0x1F0 */
-#define REG_ERROR       1   /* 0x1F1 (read) */
-#define REG_FEATURES    1   /* 0x1F1 (write) */
-#define REG_SECCOUNT    2   /* 0x1F2 */
-#define REG_LBA_LO      3   /* 0x1F3 */
-#define REG_CYL_LO      4   /* 0x1F4 */
-#define REG_LBA_MID      4   /* 0x1F4 */
-#define REG_CYL_HI      5   /* 0x1F5 */
-#define REG_LBA_HI      5   /* 0x1F5 */
-#define REG_DEVSEL      6   /* 0x1F6 */
-#define REG_STATUS      7   /* 0x1F7 (read) */
-#define REG_COMMAND     7   /* 0x1F7 (write) */
-
-#define NO_ATA_IDENTIFY_DEBUG_PRINT_INFO
-#define NO_ATA_IDENTIFY_DEBUG_PRINT_ERR
-
-#define ATA_TIMEOUT_BSY   100000
-#define ATA_TIMEOUT_DRQ   100000
-
-typedef enum {
-    ATA_ERR_NONE = 0,
-    ATA_ERR_NO_DEVICE,
-    ATA_ERR_NOT_ATA,
-    ATA_ERR_DEVICE_FAULT,
-    ATA_ERR_TIMEOUT,
-    ATA_ERR_NO_MEMORY,
-    ATA_ERR_INVALID_ARG
-
-} ata_error_t;
-
-
-#include "../STD/int.h"
-
-uint32_t ata_u32(uint16_t lo, uint16_t hi);
-int ata_wait_not_bsy(uint16_t io_base);
-int ata_wait_drq(uint16_t io_base);
-const char *devtype_to_string(int type);
-
-const char *devtype_to_string(int type);
-typedef struct DEVICE {
-    uint16_t base;     /* Command block base (e.g. 0x1F0 or 0x170) */
-    uint16_t dev_ctl;  /* Control block base (e.g. 0x3F6 or 0x376) */
-} DEVICE;
-
-extern DEVICE ata_primary;
 
 typedef enum ata_error_type
 {
@@ -360,14 +303,59 @@ typedef enum ata_error_type
     DEVICE_DOES_NOT_EXIST,
     ERROR_WHILE_DRQ_POLL,
 
+    ATA_ERR_TIMEOUT,
+    ATA_ERR_NOT_ATA,
+    ATA_ERR_DEVICE_FAULT,
+    ATA_ERR_NO_DEVICE,
+    ATA_ERR_INVALID_ARG,
+    ATA_ERR_NONE,
+
 } ata_error_type;
 
+typedef struct DEVICE {
+    uint16_t base;     /* Command block base (e.g. 0x1F0 or 0x170) */
+    uint16_t dev_ctl;  /* Control block base (e.g. 0x3F6 or 0x376) */
+} DEVICE;
+
+#define ATA_PRIMARY_BASE     0x1F0
+#define ATA_PRIMARY_DEVCTL   0x3F6
+/* differentiate ATA, ATAPI, SATA and SATAPI */
+#define ATADEV_PATAPI 5
+#define ATADEV_SATAPI 4
+#define ATADEV_PATA 3
+#define ATADEV_SATA 2
+#define ATADEV_UNKNOWN 1
+/* ATA command block register offsets */
+#define REG_DATA        0   /* 0x1F0 */
+#define REG_ERROR       1   /* 0x1F1 (read) */
+#define REG_FEATURES    1   /* 0x1F1 (write) */
+#define REG_SECCOUNT    2   /* 0x1F2 */
+#define REG_LBA_LO      3   /* 0x1F3 */
+#define REG_CYL_LO      4   /* 0x1F4 */
+#define REG_LBA_MID      4   /* 0x1F4 */
+#define REG_CYL_HI      5   /* 0x1F5 */
+#define REG_LBA_HI      5   /* 0x1F5 */
+#define REG_DEVSEL      6   /* 0x1F6 */
+#define REG_STATUS      7   /* 0x1F7 (read) */
+#define REG_COMMAND     7   /* 0x1F7 (write) */
+
+#define NO_ATA_IDENTIFY_DEBUG_PRINT_INFO
+#define NO_ATA_IDENTIFY_DEBUG_PRINT_ERR
+
+#define ATA_TIMEOUT_BSY   100000
+#define ATA_TIMEOUT_DRQ   100000
+
+uint32_t ata_u32(uint16_t lo, uint16_t hi);
+int ata_wait_not_bsy(uint16_t io_base);
+int ata_wait_drq(uint16_t io_base);
+const char *devtype_to_string(int type);
+
+extern DEVICE ata_primary;
 
 ata_error_type get_ata_last_error();
 void set_ata_last_error(ata_error_type e);
 int ata_ok(void);
 int ata_fail(ata_error_type e);
-
 
 int detect_devtype (int slavebit, DEVICE *ctrl);
 int ata_soft_reset(uint16_t dcr_port);
