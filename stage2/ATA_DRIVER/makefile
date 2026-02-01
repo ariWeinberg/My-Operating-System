@@ -29,6 +29,10 @@ $(build_dir)/software_reset.o: $(ATA_DRIVER_dir)/software_reset.c $(ATA_DRIVER_d
 	gcc -m32 -g -ffreestanding -fno-pic -fno-pie -nostdlib -nostartfiles -nodefaultlibs \
         -I../../stage2 -c $(ATA_DRIVER_dir)/software_reset.c -o $(build_dir)/software_reset.o
 
+$(build_dir)/detect_device_type.o: $(ATA_DRIVER_dir)/detect_device_type.c $(ATA_DRIVER_dir)/ATA.h
+	gcc -m32 -g -ffreestanding -fno-pic -fno-pie -nostdlib -nostartfiles -nodefaultlibs \
+        -I../../stage2 -c $(ATA_DRIVER_dir)/detect_device_type.c -o $(build_dir)/detect_device_type.o
+
 
 # Default target
 all: $(build_dir)/ata_driver.o \
@@ -36,4 +40,5 @@ $(build_dir)/ata_helpers.o \
 $(build_dir)/pio_read28.o \
 $(build_dir)/ata_error.o \
 $(build_dir)/ata_identify.o\
-$(build_dir)/software_reset.o
+$(build_dir)/software_reset.o \
+$(build_dir)/detect_device_type.o

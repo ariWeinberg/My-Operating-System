@@ -35,7 +35,13 @@ $(build_dir)/memory_managment.o:
 	$(MAKE) -C $(MEMORY_MANAGMENT_dir) all
 
 # Build ata_driver module via its own Makefile
-$(build_dir)/ata_driver.o $(build_dir)/ata_helpers.o $(build_dir)/pio_read28.o $(build_dir)/ata_error.o $(build_dir)/ata_identify.o $(build_dir)/software_reset.o:
+$(build_dir)/ata_driver.o \
+$(build_dir)/ata_helpers.o \
+$(build_dir)/pio_read28.o \
+$(build_dir)/ata_error.o \
+$(build_dir)/ata_identify.o \
+$(build_dir)/software_reset.o \
+$(build_dir)/detect_device_type.o:
 	$(MAKE) -C $(ATA_DRIVER_dir) all
 
 # Build ata_driver module via its own Makefile
@@ -64,7 +70,8 @@ $(build_dir)/pio_read28.o \
 $(build_dir)/ata_helpers.o \
 $(build_dir)/ata_error.o \
 $(build_dir)/ata_identify.o \
-$(build_dir)/software_reset.o
+$(build_dir)/software_reset.o \
+$(build_dir)/detect_device_type.o
 	ld -m elf_i386 -T $(etc_dir)/linker.ld \
 	$(build_dir)/bootloader_stage2.o \
 	$(build_dir)/kernel.o \
@@ -81,6 +88,7 @@ $(build_dir)/software_reset.o
 	$(build_dir)/ata_error.o \
 	$(build_dir)/ata_identify.o \
 	$(build_dir)/software_reset.o \
+	$(build_dir)/detect_device_type.o \
 	-o	$(build_dir)/stage2.elf
 
 $(build_dir)/stage2.bin: $(build_dir)/stage2.elf $(build_dir)/bootloader_stage2.o
@@ -128,4 +136,5 @@ clean:
 	$(build_dir)/pio_read28.o \
 	$(build_dir)/ata_error.o \
 	$(build_dir)/ata_identify.o \
-	$(build_dir)/software_reset.o
+	$(build_dir)/software_reset.o \
+	$(build_dir)/detect_device_type.o
