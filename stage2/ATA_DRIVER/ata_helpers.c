@@ -7,8 +7,7 @@ uint32_t ata_u32(uint16_t lo, uint16_t hi)
     return ((uint32_t)hi << 16) | lo;
 }
 
-uint64_t ata_u64(uint16_t w0, uint16_t w1,
-                               uint16_t w2, uint16_t w3)
+uint64_t ata_u64(uint16_t w0, uint16_t w1, uint16_t w2, uint16_t w3)
 {
     return ((uint64_t)w3 << 48) |
            ((uint64_t)w2 << 32) |
@@ -25,13 +24,12 @@ int ata_wait_not_bsy(uint16_t io_base)
     {
         status = inb(io_base + REG_STATUS);
 
-        if (status & 0x01)   /* ERR */
-            return -1;
-
-        if (!(status & 0x80)) /* BSY cleared */
-            return 0;
+        if (status == 0xFF) return ata_fail(BUS_FLOAT);  // no device
+        if (status & 0x01)  return ata_fail(ERROR);      // ERR
+        if (!(status & 0x80)) return ata_ok();          // BSY cleared
     }
-    return -2; /* timeout */
+
+    return ata_fail(BSY_TIMEOUT);
 }
 
 int ata_wait_drq(uint16_t io_base)
@@ -43,14 +41,14 @@ int ata_wait_drq(uint16_t io_base)
     {
         status = inb(io_base + REG_STATUS);
 
-        if (status & 0x01)   /* ERR */
-            return -1;
-
-        if (status & 0x08)  /* DRQ */
-            return 0;
+        if (status == 0xFF) return ata_fail(BUS_FLOAT);  // no device
+        if (status & 0x01)  return ata_fail(ERROR);      // ERR
+        if (status & 0x08)  return ata_ok();             // DRQ set
     }
-    return ata_fail(DRQ_TIMEOUT); /* timeout */
+
+    return ata_fail(DRQ_TIMEOUT);
 }
+
 
 const char *devtype_to_string(int type) {
     switch (type) {
@@ -62,7 +60,7 @@ const char *devtype_to_string(int type) {
     }
 }
 
-void ata_wait_400ns(uint16_t io_base)
+inline void ata_wait_400ns(uint16_t io_base)
 {
     inb(io_base + REG_STATUS); inb(io_base + REG_STATUS); inb(io_base + REG_STATUS); inb(io_base + REG_STATUS);
 }
