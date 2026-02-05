@@ -159,16 +159,23 @@ typedef struct Fat16
 
 typedef enum fat16_error_type
 {
-    OK,
-    BOOT_SECTOR_READ_FAIL,
-    INVALID_BOOT_SIGNATURE,
-    INVALID_EBR_SIGNATURE,
-    CRITICAL_BPB_VALUE_IS_ZERO,
-    FAT_LOAD_FAIL,
-    ROOT_DIRECTORY_LOAD_FAIL,
-
-
-
+    FAT16_OK,
+    FAT16_BOOT_SECTOR_READ_FAIL,
+    FAT16_INVALID_BOOT_SIGNATURE,
+    FAT16_INVALID_EBR_SIGNATURE,
+    FAT16_CRITICAL_BPB_VALUE_IS_ZERO,
+    FAT16_FAT_LOAD_FAIL,
+    FAT16_ROOT_DIRECTORY_LOAD_FAIL,
+    FAT16_INVALID_ARGUMENT,
+    FAT16_MEMORY_ALLOCATION_FAIL,
+    FAT16_CHAIN_TRAVERSAL_FAIL,
+    FAT16_DIRECTORY_PARSING_FAIL,
+    FAT16_ENTRY_LOAD_FAIL,
+    FAT16_INVALID_ATTRIBUTE,
+    FAT16_ENTRY_NOT_FOUND,
+    LFN_BUFFER_FULL,
+    LFN_BUFFER_EMPTY,
+    FAT16_LFN_SFN_PARSING_FAIL,
 } fat16_error_type;
 
 fat16_error_type get_fat16_last_error();
@@ -187,7 +194,6 @@ bool load_root_directory(Fat16 *fat);
 DirEntry *find_file(Fat16 *fat, const char* name);
 ClusterChain *traverse_chain(Fat16 *fat, uint16_t chain_start);
 void *load_cluster_chain(Fat16 *fat, ClusterChain *chain, void *destination);
-DirEntry *load_dir(Fat16 *fat, DirEntry *directory);
 DirEntry *find_file_in_directory(Fat16 *fat, DirEntry *directory, const char* name);
 parsed_dir *parse_dir(Fat16 *fat, DirEntry *dir, uint32_t max_entries);
 char *parse_LFN_buffer(LFN_buffer *buffer);
@@ -195,7 +201,11 @@ bool parse_LFN_entry(const LFN_entry *lfn, LFN_buffer *buf);
 void free_parsed_dir(parsed_dir *pd);
 parsed_dir_entry *find_parsed_dir_entry(parsed_dir *dir, const char *name);
 
-void *load_file(Fat16 *fat, DirEntry *file);
+void lfn_buffer_clear(LFN_buffer *buf);
+
+void *load_clustered_entry(Fat16 *fat, DirEntry *entry);
+
+char *normalize_SFN(const char sfn[11]);
 
 void *open(Fat16 *fat, const char *name);
 bool __reload_open(Fat16 *fat, bool *dir_owned, DirEntry **current_dir, parsed_dir **current_parsed_dir, parsed_dir_entry *e);

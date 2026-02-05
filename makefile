@@ -27,7 +27,14 @@ $(build_dir)/kernel.o: $(stage2_dir)/bootloader_stage2.c
 	-c $(stage2_dir)/bootloader_stage2.c -o $(build_dir)/kernel.o
 
 # Build FAT16 module via its own Makefile
-$(build_dir)/fat16.o $(build_dir)/fat16_helpers.o /$(build_dir)/fat16_error.o.o:
+$(build_dir)/fat16.o \
+$(build_dir)/fat16_helpers.o \
+$(build_dir)/fat16_error.o \
+$(build_dir)/chain.o \
+$(build_dir)/open.o \
+$(build_dir)/lfn.o \
+$(build_dir)/load_clusterd_entry.o \
+$(build_dir)/parse_dir.o:
 	$(MAKE) -C $(FAT16_dir) all
 
 # Build memory_managment module via its own Makefile
@@ -57,8 +64,10 @@ $(build_dir)/string.o:
 	$(MAKE) -C $(STRING_dir) all
 
 $(build_dir)/stage2.elf: $(build_dir)/bootloader_stage2.o \
+$(build_dir)/chain.o \
 $(build_dir)/kernel.o \
 $(build_dir)/fat16.o \
+$(build_dir)/lfn.o \
 $(build_dir)/memory_managment.o \
 $(build_dir)/ata_driver.o \
 $(build_dir)/utils.o \
@@ -69,16 +78,22 @@ $(build_dir)/pio_read28.o \
 $(build_dir)/ata_helpers.o \
 $(build_dir)/ata_error.o \
 $(build_dir)/ata_identify.o \
+$(build_dir)/load_clusterd_entry.o \
 $(build_dir)/software_reset.o \
 $(build_dir)/detect_device_type.o \
 $(build_dir)/fat16_error.o \
-$(build_dir)/fat16_helpers.o
+$(build_dir)/open.o \
+$(build_dir)/fat16_helpers.o \
+$(build_dir)/parse_dir.o
 	ld -m elf_i386 -T $(etc_dir)/linker.ld \
 	$(build_dir)/bootloader_stage2.o \
 	$(build_dir)/kernel.o \
+	$(build_dir)/load_clusterd_entry.o \
 	$(build_dir)/fat16_helpers.o \
 	$(build_dir)/fat16_error.o \
 	$(build_dir)/fat16.o \
+	$(build_dir)/chain.o \
+	$(build_dir)/lfn.o \
 	$(build_dir)/memory_managment.o \
 	$(build_dir)/ata_driver.o \
 	$(build_dir)/utils.o \
@@ -91,6 +106,8 @@ $(build_dir)/fat16_helpers.o
 	$(build_dir)/ata_identify.o \
 	$(build_dir)/software_reset.o \
 	$(build_dir)/detect_device_type.o \
+	$(build_dir)/open.o \
+	$(build_dir)/parse_dir.o \
 	-o	$(build_dir)/stage2.elf
 
 $(build_dir)/stage2.bin: $(build_dir)/stage2.elf $(build_dir)/bootloader_stage2.o
@@ -140,5 +157,11 @@ clean:
 	$(build_dir)/software_reset.o \
 	$(build_dir)/detect_device_type.o \
 	$(build_dir)/fat16_error.o\
-	$(build_dir)/fat16_helpers.o
+	$(build_dir)/fat16_helpers.o \
+	$(build_dir)/chain.o \
+	$(build_dir)/open.o \
+	$(build_dir)/lfn.o \
+	$(build_dir)/load_clusterd_entry.o \
+	$(build_dir)/parse_dir.o
+	
 	
