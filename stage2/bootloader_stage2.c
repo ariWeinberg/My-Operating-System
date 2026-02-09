@@ -12,6 +12,37 @@
 ata_identify_u identify_result;
 Fat16 *fat;
 
+void load_raw_kernel(Fat16 *fat, const char *path, uint32_t load_addr)
+{
+    print_string("Loading Raw Binary...\n");
+    
+    // 1. Read the file bytes
+    uint8_t *file_data = open(fat, path);
+    if (!file_data) return;
+
+    // 2. Copy to the fixed address defined in your linker.ld (0x100000)
+    // Assuming you have the file size from your FAT16 driver
+    uint32_t file_size = get_file_size(fat, path); 
+    memcpy((void*)load_addr, file_data, file_size);
+
+    print_string("Jumping to Raw Binary...\n");
+
+    // 3. Simple Jump
+    typedef void (*kernel_entry)();
+    kernel_entry start = (kernel_entry)load_addr;
+    
+    // Set up segments and jump
+    __asm__ volatile (
+        "mov $0x10, %%ax\n\t"
+        "mov %%ax, %%ds\n\t"
+        "mov %%ax, %%es\n\t"
+        "mov %%ax, %%ss\n\t"
+        "mov %0, %%esp\n\t"    // Use a safe stack pointer
+        "jmp *%1\n\t"          // Jump to 0x100000
+        : : "r"(0x90000), "r"(start) : "eax"
+    );
+}
+
 
 void c_main()
 {
@@ -32,17 +63,10 @@ void c_main()
     fat = zalloc(sizeof(Fat16));
     fat_init(fat);
     print_string("fat initialized!\n\r");
-    
-    void *file = open(fat, "/NEWDIR1/NEWFILE3.TXT");
-    if (file)
-    {
-        print_string("file loaded");
-        print_string("\n\n\r===============\n\r file contents\n\r===============\n\n\r");
-        print_string(file);
-        print_string("\n\n");
-    }
-    else
-    {print_string("file not loaded");}
+
+    // load raw kernel from file "/OS/KERNEL" and run it.
+    load_raw_kernel(fat, "/OS/KERNEL", 0x100000);
+    print_string("\n\n");
 
         
 while (1){;}
