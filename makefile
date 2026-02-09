@@ -11,6 +11,9 @@ UTILS_dir=$(stage2_dir)/UTILS
 SCREEN_DRIVER_dir=$(stage2_dir)/SCREEN_DRIVER
 STRING_dir=$(stage2_dir)/STRING
 
+
+final_kernel=./kernel
+
 # Stage 1 bootloader
 $(build_dir)/bootloader.o: $(stage1_dir)/bootloader.s
 	nasm -f bin -o $(build_dir)/bootloader.o $(stage1_dir)/bootloader.s \
@@ -30,6 +33,7 @@ $(build_dir)/kernel.o: $(stage2_dir)/bootloader_stage2.c
 $(build_dir)/fat16.o \
 $(build_dir)/fat16_helpers.o \
 $(build_dir)/fat16_error.o \
+$(build_dir)/get_file_size.o \
 $(build_dir)/chain.o \
 $(build_dir)/open.o \
 $(build_dir)/lfn.o \
@@ -63,6 +67,11 @@ $(build_dir)/screen_driver.o:
 $(build_dir)/string.o:
 	$(MAKE) -C $(STRING_dir) all
 
+
+kernel/build/kernel.bin:
+	$(MAKE) -C $(final_kernel) all
+	
+
 $(build_dir)/stage2.elf: $(build_dir)/bootloader_stage2.o \
 $(build_dir)/chain.o \
 $(build_dir)/kernel.o \
@@ -84,7 +93,8 @@ $(build_dir)/detect_device_type.o \
 $(build_dir)/fat16_error.o \
 $(build_dir)/open.o \
 $(build_dir)/fat16_helpers.o \
-$(build_dir)/parse_dir.o
+$(build_dir)/parse_dir.o \
+$(build_dir)/get_file_size.o 
 	ld -m elf_i386 -T $(etc_dir)/linker.ld \
 	$(build_dir)/bootloader_stage2.o \
 	$(build_dir)/kernel.o \
@@ -108,12 +118,13 @@ $(build_dir)/parse_dir.o
 	$(build_dir)/detect_device_type.o \
 	$(build_dir)/open.o \
 	$(build_dir)/parse_dir.o \
+	$(build_dir)/get_file_size.o \
 	-o	$(build_dir)/stage2.elf
 
 $(build_dir)/stage2.bin: $(build_dir)/stage2.elf $(build_dir)/bootloader_stage2.o
 	objcopy -O binary $(build_dir)/stage2.elf $(build_dir)/stage2.bin
 
-$(out_dir)/disk.img: $(build_dir)/bootloader.o $(build_dir)/stage2.bin
+$(out_dir)/disk.img: $(build_dir)/bootloader.o $(build_dir)/stage2.bin kernel/build/kernel.bin
 	dd if=/dev/zero of=$(out_dir)/disk.img bs=512 count=32768
 	mkfs.fat -F 16 -f 2 -R 50 $(out_dir)/disk.img
 	dd if=$(build_dir)/bootloader.o of=$(out_dir)/disk.img conv=notrunc bs=1 seek=61 skip=61
@@ -126,9 +137,13 @@ $(out_dir)/disk.img: $(build_dir)/bootloader.o $(build_dir)/stage2.bin
 	mcopy -i $(out_dir)/disk.img $(etc_dir)/test.txt ::NEWFILE2
 	mcopy -i $(out_dir)/disk.img $(etc_dir)/test_sub.txt ::/NEWDIR1/NEWFILE3.txt
 	mdel -i $(out_dir)/disk.img ::NEWFILE1
+	mmd -i $(out_dir)/disk.img ::OS
+	mcopy -i $(out_dir)/disk.img kernel/build/kernel.bin ::/OS/KERNEL
+
+
 
 run_disk: $(out_dir)/disk.img
-	qemu-system-i386 -drive file=$(out_dir)/disk.img,format=raw
+	qemu-system-i386 -drive file=$(out_dir)/disk.img,format=raw -d int,cpu_reset -D qemu.log
 
 debug_disk: $(out_dir)/disk.img
 	qemu-system-i386 -drive file=$(out_dir)/disk.img,format=raw -s -S
@@ -162,6 +177,8 @@ clean:
 	$(build_dir)/open.o \
 	$(build_dir)/lfn.o \
 	$(build_dir)/load_clusterd_entry.o \
-	$(build_dir)/parse_dir.o
-	
-	
+	$(build_dir)/parse_dir.o \
+	$(build_dir)/get_file_size.o \
+	kernel/build/kernel.bin
+
+	$(MAKE) -C $(final_kernel) clean
