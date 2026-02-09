@@ -1,3 +1,9 @@
 build/*
 out/*
 .vscode
+
+qemu.log
+
+a.out
+
+kernel/build/
