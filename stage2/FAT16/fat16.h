@@ -34,4 +34,15 @@ char *normalize_SFN(const char sfn[11]);
 void *open(Fat16 *fat, const char *name);
 bool __reload_open(Fat16 *fat, bool *dir_owned, DirEntry **current_dir, parsed_dir **current_parsed_dir, parsed_dir_entry *e);
 uint32_t round_bytes_to_clusters(Fat16 *fat, uint32_t bytes);
+
+
+
+/**
+ * Get the size of a file in bytes.
+ *
+ * @param fat Pointer to initialized Fat16 structure
+ * @param name Full path of the file
+ * @return File size in bytes, or UINT32_MAX on error
+ */
+uint32_t get_file_size(Fat16 *fat, const char *name);
 #endif

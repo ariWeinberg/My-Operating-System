@@ -1,4 +1,6 @@
 #include "fat16.h"
+#include "../MEMORY_MANAGMENT/memory_managment.h"
+#include "../STRING/string.h"
 parsed_dir *parse_dir(Fat16 *fat, DirEntry *dir, uint32_t max_entries)
 {
     parsed_dir *pd = zalloc(sizeof(parsed_dir));

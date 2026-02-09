@@ -36,6 +36,10 @@ $(build_dir)/parse_dir.o: $(FAT16_dir)/parse_dir.c $(FAT16_dir)/fat16.h
 	gcc -m32 -g -ffreestanding -fno-pic -fno-pie -nostdlib -nostartfiles -nodefaultlibs \
         -I../../stage2 -c $(FAT16_dir)/parse_dir.c -o $(build_dir)/parse_dir.o
 
+$(build_dir)/get_file_size.o: $(FAT16_dir)/get_file_size.c $(FAT16_dir)/fat16.h
+	gcc -m32 -g -ffreestanding -fno-pic -fno-pie -nostdlib -nostartfiles -nodefaultlibs \
+        -I../../stage2 -c $(FAT16_dir)/get_file_size.c -o $(build_dir)/get_file_size.o
+
 # Default target
 all: $(build_dir)/fat16.o \
 $(build_dir)/fat16_helpers.o \
@@ -44,4 +48,5 @@ $(build_dir)/open.o \
 $(build_dir)/chain.o \
 $(build_dir)/lfn.o \
 $(build_dir)/load_clusterd_entry.o \
-$(build_dir)/parse_dir.o
+$(build_dir)/parse_dir.o \
+$(build_dir)/get_file_size.o
