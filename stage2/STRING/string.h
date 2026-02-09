@@ -15,7 +15,7 @@ char *strncat(char *dest, const char *src, int n);
 // Returns: number of bytes written (excluding null terminator)
 uint32_t utf16_to_ascii(uint16_t *src, uint32_t len, char *dest);
 uint16_t strsplit(const char *str, const char delimiter, char ***dest);
-
+uint32_t snprintf(char *buf, uint32_t size, const char *fmt, void **args);
 typedef enum
 {
     STR_ERR_NONE = 0,
