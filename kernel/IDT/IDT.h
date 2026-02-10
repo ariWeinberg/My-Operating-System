@@ -15,11 +15,12 @@ typedef struct idt_ptr {
 } __attribute__((packed)) idt_ptr;
 
 #define IDT_SIZE 256
-
+extern uint8_t isr_stubs[256][10];
+void common_isr(void);
 
 
 void idt_init();
 void load_idt(idt_ptr *ip);
-void idt_test_init(void);
+void idt_init_with_stubs(void);
 
 void set_idt_entry(int n, uint32_t handler, uint16_t selector, uint8_t type_attr);

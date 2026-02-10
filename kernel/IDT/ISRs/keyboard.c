@@ -6,9 +6,19 @@
 
 #define KBD_PORT 0x60
 #define PIC1_CMD 0x20
-uint8_t scancode_map_indexes[]  = {  0x02,  0x03,   0x04,   0x05,   0x06,   0x07,   0x08,   0x09,   0x0A,   0x0B,   0x0C,   0x0D,   0x0E,   0x0F,   };
-char    scancode_map_values[]   = {  '1',   '2',   '3',    '4',    '5',    '6',    '7',    '8',    '9',    '0',    '-',    '=',    '\b',   '\t',    };
-uint16_t map_size = 14;
+// size                              1     2      3       4       5       6       7       8       9       10      11      12     13      14
+uint8_t scancode_map_indexes[]  = { 0x29,  0x02,  0x03,   0x04,   0x05,   0x06,   0x07,   0x08,   0x09,   0x0A,   0x0B,  0x0C,   0x0D,   0x0E,
+//                                  15     16     17     18      19     20      21      22      23      24      25      26      27      28
+                                    0x0F,  0x10,  0x11,  0x12,  0x13,   0x14,   0x15,   0x16,   0x17,   0x18,   0x19,   0x1A,   0x1B,   0x2B,
+//                                  28     29     30      31      32      33      34      35      36      37      38     39
+                                    0x1E,  0x1F,  0x20,  0x21,   0x22,   0x23,   0x24,   0x25,   0x26,   0x27,   0x28,   0x1C,   };
+// size                              1      2       3       4       5       6       7       8       9       10      11      12      13      14
+char    scancode_map_values[]   = { '`',   '1',   '2',   '3',    '4',    '5',    '6',    '7',    '8',    '9',    '0',    '-',    '=',    '\b',   
+//                                  15     16     17     18      19      20      21      22      23      24      25      26      27      28
+                                    '\t',  'q',   'w',   'e',    'r',    't',    'y',    'u',    'i',    'o',    'p',    '[',    ']',    '\\',
+//                                  28     29      30      31      32      33      34      35      36      37      38     40
+                                    'a',   's',   'd',    'f',    'g',    'h',    'j',    'k',    'l',    ';',    '\'',   '\n',    };
+uint16_t map_size = 40;
 
 char scancode_to_char(uint8_t scancode)
 {
@@ -30,7 +40,16 @@ void keyboard_handler_c(uint8_t scancode) {
     // (void)scancode; // placeholder
     scancode = inb(0x60);
 
+    if(scancode > 0x80)
+    return;
     put_char(scancode_to_char(scancode),0x0F);
+
+    // char buff[5];
+
+
+    // print_string(uint8_to_hex_prefixed(scancode, buff));
+    // print_string("\n");
+
     // print_string("keyboard event!\n");
 }
 

@@ -34,7 +34,7 @@ $(build_dir)/memory_managment.o:
 $(build_dir)/keyboard.o:
 	@$(MAKE) -C $(KEYBOARD_DIR) all
 
-$(build_dir)/IDT.o:
+$(build_dir)/IDT.o $(build_dir)/interrupt_stub.o:
 	@$(MAKE) -C $(IDT_DIR) all
 
 $(build_dir)/PIC.o:
@@ -48,7 +48,8 @@ $(build_dir)/kernel.elf: $(build_dir)/kernel.o \
                         $(build_dir)/memory_managment.o \
 						$(build_dir)/PIC.o \
 						$(build_dir)/IDT.o \
-						$(build_dir)/keyboard.o	
+						$(build_dir)/keyboard.o	\
+						$(build_dir)/interrupt_stub.o
 	ld -m elf_i386 -T linker.ld -o $@ $^
 
 
@@ -68,7 +69,8 @@ clean:
 	      $(build_dir)/kernel.bin \
 	      $(build_dir)/IDT.o \
 	      $(build_dir)/keyboard.o \
-	      $(build_dir)/PIC.o
+	      $(build_dir)/PIC.o \
+		  $(build_dir)/interrupt_stub.o
 	@echo "successfully deleted all build files."
 
 all: $(build_dir)/kernel.bin

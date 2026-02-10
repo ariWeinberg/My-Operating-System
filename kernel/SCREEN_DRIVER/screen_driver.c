@@ -51,17 +51,14 @@ void put_char(char c, uint8_t color)
     case 8:
         cur[-2] = ' ';
         cur[-1] = color;
-        if (cursor_x == 0)
+        if (cursor_x == 0 && cursor_y > 0)
         {
-            if (cursor_y > 0)
-                {
-                    cursor_y -= 1;
-                }
-
+            cursor_y -= 1;
             cursor_x = columns - 1;
         }
         else
         {
+            if (cursor_x > 0)
             cursor_x -= 1;
         }
         return;
