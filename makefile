@@ -126,7 +126,7 @@ $(build_dir)/stage2.bin: $(build_dir)/stage2.elf $(build_dir)/bootloader_stage2.
 
 $(out_dir)/disk.img: $(build_dir)/bootloader.o $(build_dir)/stage2.bin kernel/build/kernel.bin
 	dd if=/dev/zero of=$(out_dir)/disk.img bs=512 count=32768
-	mkfs.fat -F 16 -f 2 -R 50 $(out_dir)/disk.img
+	mkfs.fat -F 16 -f 2 -R 40 $(out_dir)/disk.img
 	dd if=$(build_dir)/bootloader.o of=$(out_dir)/disk.img conv=notrunc bs=1 seek=61 skip=61
 	dd if=$(build_dir)/stage2.bin of=$(out_dir)/disk.img conv=notrunc bs=512 seek=1
 	mmd -i $(out_dir)/disk.img ::NEWDIR1
