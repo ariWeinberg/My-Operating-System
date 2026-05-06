@@ -80,3 +80,12 @@ void io_wait()
 {
     
 }
+
+void halt()
+{
+    while(1)
+    {
+       __asm__ volatile ("cli");
+        __asm__ volatile ("hlt");
+    }
+}

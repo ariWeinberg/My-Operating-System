@@ -1,4 +1,5 @@
 #include "../../../SCREEN_DRIVER/screen_driver.h"
+#include "../../../UTILS/asm_utils.h"
 
 void exception_division_error()
 {

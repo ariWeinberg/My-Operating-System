@@ -15,4 +15,5 @@ int32_t idiv64_32(int64_t dividend, int32_t divisor, int32_t *remainder);
 uint64_t __udivdi3(uint64_t dividend, uint64_t divisor);
 // GCC internal: Unsigned 64-bit modulo
 uint64_t __umoddi3(uint64_t dividend, uint64_t divisor);
+void halt();
 #endif
