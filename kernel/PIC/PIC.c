@@ -33,7 +33,7 @@
 
 
 
-void PIC_sendEOI(uint8_t irq)
+void pic_send_eoi(uint8_t irq)
 {
 	if(irq >= 8)
 		outb(PIC2_COMMAND,PIC_EOI);
@@ -41,12 +41,12 @@ void PIC_sendEOI(uint8_t irq)
 	outb(PIC1_COMMAND,PIC_EOI);
 }
 
-void PIC_disable(void) {
+void pic_disable(void) {
     outb(PIC1_DATA, 0xff);
     outb(PIC2_DATA, 0xff);
 }
 
-void PIC_remap(int offset1, int offset2)
+void pic_remap(int offset1, int offset2)
 {
 	outb(PIC1_COMMAND, ICW1_INIT | ICW1_ICW4);  // starts the initialization sequence (in cascade mode)
 	io_wait();
@@ -71,32 +71,46 @@ void PIC_remap(int offset1, int offset2)
 	outb(PIC2_DATA, 0);
 }
 
+void irq_mask_all(void)
+{
+    /* mask everything except keyboard if you want */
+    outb(0x21, 0xFF);
+    outb(0xA1, 0xFF);
+}
 
-void IRQ_set_mask(uint8_t IRQline) {
+void irq_clear_all(void)
+{
+    /* mask everything except keyboard if you want */
+    outb(0x21, 0x00);
+    outb(0xA1, 0x00);
+}
+
+
+void irq_set_mask(uint8_t irq_line) {
     uint16_t port;
     uint8_t value;
 
-    if(IRQline < 8) {
+    if(irq_line < 8) {
         port = PIC1_DATA;
     } else {
         port = PIC2_DATA;
-        IRQline -= 8;
+        irq_line -= 8;
     }
-    value = inb(port) | (1 << IRQline);
+    value = inb(port) | (1 << irq_line);
     outb(port, value);        
 }
 
-void IRQ_clear_mask(uint8_t IRQline) {
+void irq_clear_mask(uint8_t irq_line) {
     uint16_t port;
     uint8_t value;
 
-    if(IRQline < 8) {
+    if(irq_line < 8) {
         port = PIC1_DATA;
     } else {
         port = PIC2_DATA;
-        IRQline -= 8;
+        irq_line -= 8;
     }
-    value = inb(port) & ~(1 << IRQline);
+    value = inb(port) & ~(1 << irq_line);
     outb(port, value);        
 }
 

@@ -1,4 +1,4 @@
-build_dir=../../build
+build_dir=../../../build
 SCREEN_DRIVER_dir=.
 
 # Compile FAT16 main file

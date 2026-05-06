@@ -7,12 +7,9 @@
 
 #define PIC_EOI		0x20		/* End-of-interrupt command code */
 
-void pic_remap();
+void pic_send_eoi(uint8_t irq);
 
-
-void PIC_sendEOI(uint8_t irq);
-
-void PIC_disable(void);
+void pic_disable(void);
 
 
 
@@ -34,17 +31,19 @@ void PIC_disable(void);
 #define CASCADE_IRQ 2
 
 /*
-arguments:
-	offset1 - vector offset for master PIC
-		vectors on the master become offset1..offset1+7
-	offset2 - same for slave PIC: offset2..offset2+7
-*/
-void PIC_remap(int offset1, int offset2);
+ * arguments:
+ *   offset1 - vector offset for master PIC (vectors offset1..offset1+7)
+ *   offset2 - same for slave PIC (vectors offset2..offset2+7)
+ */
+void pic_remap(int offset1, int offset2);
 
+void irq_mask_all(void);
 
-void IRQ_set_mask(uint8_t IRQline);
+void irq_clear_all(void);
 
-void IRQ_clear_mask(uint8_t IRQline);
+void irq_set_mask(uint8_t irq_line);
+
+void irq_clear_mask(uint8_t irq_line);
 
 
 #define PIC_READ_IRR                0x0a    /* OCW3 irq ready next CMD read */

@@ -9,8 +9,10 @@ MEMORY_MANAGMENT_dir=$(kernel_dir)/MEMORY_MANAGMENT
 STD_dir=$(kernel_dir)/STD
 
 PIC_DIR=$(kernel_dir)/PIC
+PIT_DIR=$(kernel_dir)/PIT
 IDT_DIR=$(kernel_dir)/IDT
 KEYBOARD_DIR=$(IDT_DIR)/ISRs
+GDT_DIR=$(kernel_dir)/GDT
 
 # Kernel object
 $(build_dir)/kernel.o: $(kernel_dir)/main.c
@@ -31,14 +33,17 @@ $(build_dir)/screen_driver.o:
 $(build_dir)/memory_managment.o:
 	@$(MAKE) -C $(MEMORY_MANAGMENT_dir) all
 
-$(build_dir)/keyboard.o:
-	@$(MAKE) -C $(KEYBOARD_DIR) all
-
-$(build_dir)/IDT.o $(build_dir)/interrupt_stub.o:
+$(build_dir)/IDT.o $(build_dir)/interrupt_stub.o $(build_dir)/exceptions.o $(build_dir)/keyboard.o:
 	@$(MAKE) -C $(IDT_DIR) all
 
 $(build_dir)/PIC.o:
 	@$(MAKE) -C $(PIC_DIR) all
+
+$(build_dir)/PIT.o:
+	@$(MAKE) -C $(PIT_DIR) all
+
+$(build_dir)/GDT.o:
+	@$(MAKE) -C $(GDT_DIR) all
 
 # Link all into ELF
 $(build_dir)/kernel.elf: $(build_dir)/kernel.o \
@@ -47,8 +52,11 @@ $(build_dir)/kernel.elf: $(build_dir)/kernel.o \
                         $(build_dir)/screen_driver.o \
                         $(build_dir)/memory_managment.o \
 						$(build_dir)/PIC.o \
+						$(build_dir)/PIT.o \
 						$(build_dir)/IDT.o \
+						$(build_dir)/exceptions.o \
 						$(build_dir)/keyboard.o	\
+						$(build_dir)/GDT.o \
 						$(build_dir)/interrupt_stub.o
 	ld -m elf_i386 -T linker.ld -o $@ $^
 
@@ -70,7 +78,10 @@ clean:
 	      $(build_dir)/IDT.o \
 	      $(build_dir)/keyboard.o \
 	      $(build_dir)/PIC.o \
-		  $(build_dir)/interrupt_stub.o
+	      $(build_dir)/PIT.o \
+		  $(build_dir)/interrupt_stub.o \
+		  $(build_dir)/exceptions.o \
+		  $(build_dir)/GDT.o
 	@echo "successfully deleted all build files."
 
 all: $(build_dir)/kernel.bin

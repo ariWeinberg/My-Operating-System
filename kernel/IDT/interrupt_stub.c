@@ -4,33 +4,41 @@
 
 /* This array will hold the actual machine code for 256 "stub" functions */
 /* Each stub is roughly 7 bytes: push imm8 (2), jmp rel32 (5) */
-uint8_t isr_stubs[256][10];
+__attribute__((section(".text")))
+__attribute__((aligned(16)))
+// uint8_t isr_stubs[256][16];
+
+
+
 
 __attribute__((naked))
-void common_isr(void)
+void idt_common_isr(void)
 {
-    __asm__ volatile (
-        "pusha\n"
-        // The interrupt ID is on the stack now (pushed by the stub)
-        // We fetch it from the stack (ESP + 32 because of pusha)
-        "mov 32(%esp), %eax\n" 
-        "push %eax\n"          // Pass ID as argument to print_isr_id
-        "call print_isr_id\n"
-        "add $4, %esp\n"       // Clean up argument
-        
-        /* EOI to PIC */
-        "movb $0x20, %al\n"
-        "outb %al, $0x20\n"
-        "outb %al, $0xA0\n"
+    asm volatile(
+        "pusha\n\t"
 
-        "popa\n"
-        "add $4, %esp\n"       // Clean up the ID pushed by the stub
-        "iret\n"
+        // interrupt number is at esp + 32
+        "mov 32(%esp), %eax\n\t"
+        "push %eax\n\t"
+        "call idt_print_isr_id\n\t"
+        "add $4, %esp\n\t"
+
+        // EOI (safe only for IRQs, but ok for now)
+        "movb $0x20, %al\n\t"
+        "outb %al, $0x20\n\t"
+        "outb %al, $0xA0\n\t"
+
+        "popa\n\t"
+        "add $4, %esp\n\t"   // remove interrupt_id
+        "iret\n\t"
     );
 }
 
+
+
+
 // Helper function to handle the printing
-void print_isr_id(uint8_t id) {
+void idt_print_isr_id(uint8_t id) {
     print_string("Interrupt received: ");
     // Assuming you have a function to print numbers/hex
     char buff[5]; 

@@ -146,7 +146,7 @@ run_disk: $(out_dir)/disk.img
 	qemu-system-i386 -drive file=$(out_dir)/disk.img,format=raw -d int,cpu_reset -D qemu.log
 
 debug_disk: $(out_dir)/disk.img
-	qemu-system-i386 -drive file=$(out_dir)/disk.img,format=raw -s -S
+	qemu-system-i386 -drive file=$(out_dir)/disk.img,format=raw -monitor stdio
 
 clean:
 	rm -f $(build_dir)/bootloader.o \

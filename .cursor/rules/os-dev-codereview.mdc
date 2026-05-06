@@ -1,0 +1,273 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Operating System Development Rules
+
+These rules define how changes to the operating system must be structured, reviewed, and validated.
+
+The goal is to keep development **safe, debuggable, and manageable**, especially for low‑level kernel work where small mistakes can prevent the system from booting.
+
+This project assumes **manual execution and verification** rather than automated pipelines.
+
+---
+
+# PR Size Limits
+
+| Metric           | Warning | Block |
+| ---------------- | ------- | ----- |
+| Files Changed    | > 15    | > 30  |
+| Lines Changed    | > 400   | > 800 |
+| New Dependencies | > 2     | > 5   |
+
+Large changes are harder to debug in a kernel environment.
+
+Keeping changes small makes it easier to identify the exact modification that caused a boot failure or system fault.
+
+---
+
+# Single Responsibility Rule
+
+Each change submission must perform **one clearly defined task**.
+
+Examples of acceptable scopes:
+
+* Add a new driver
+* Implement a subsystem
+* Fix a specific bug
+* Refactor a single module
+* Improve diagnostics
+
+Examples of unacceptable scopes:
+
+* Adding a feature while refactoring unrelated code
+* Fixing multiple unrelated bugs
+* Implementing multiple subsystems in one change
+
+---
+
+# Required Change Description
+
+Every change must include the following sections.
+
+```markdown
+## Summary
+A short description of what the change introduces.
+
+## Changes
+- [ ] Change 1
+- [ ] Change 2
+
+## Testing
+Describe how the change was verified manually.
+
+## Screenshots
+Optional for UI or display output changes.
+```
+
+---
+
+# Manual Validation Checklist
+
+Before considering a change complete, the developer must manually verify the following.
+
+### Build
+
+* System builds successfully
+* Kernel binary is produced
+
+### Boot
+
+* Bootloader executes
+* Kernel entry point reached
+* System does not reboot unexpectedly
+
+### Runtime
+
+* Interrupts function correctly
+* No visible crashes
+* Console output behaves as expected
+
+---
+
+# Architecture Separation
+
+The system is organized into layers.
+
+```
+Bootloader
+Kernel Core
+Memory Manager
+Interrupt System
+Scheduler
+Drivers
+Filesystem
+User Programs
+```
+
+Code in higher layers must not introduce dependencies into lower layers.
+
+For example:
+
+* Drivers must not depend on filesystem logic.
+* Interrupt handlers must not invoke scheduler logic directly.
+
+---
+
+# Interrupt Handler Rules
+
+Interrupt handlers must be extremely small and deterministic.
+
+Handlers should:
+
+* Capture required state
+* Acknowledge hardware
+* Queue work if needed
+* Return quickly
+
+Handlers must not:
+
+* Allocate memory
+* Access filesystem code
+* Perform long operations
+
+---
+
+# Memory Safety
+
+Kernel code must ensure:
+
+* No invalid pointer usage
+* No stack memory returned from functions
+* All allocated memory has a defined lifetime
+
+Memory corruption is one of the most common sources of kernel failure.
+
+---
+
+# Driver Guidelines
+
+Drivers should follow a consistent structure.
+
+```
+driver/
+    ata/
+    ps2/
+    pci/
+    video/
+```
+
+Each driver must clearly document:
+
+* hardware ports used
+* expected interrupts
+* initialization sequence
+
+---
+
+# Scheduler Guidelines
+
+Changes affecting the scheduler must document:
+
+* context switching mechanism
+* stack handling
+* task state storage
+
+Schedulers must preserve CPU registers during switches.
+
+---
+
+# Debug Output
+
+All diagnostic output should include subsystem tags.
+
+Example:
+
+```
+[BOOT] starting kernel
+[IDT] initialized
+[ATA] sector read
+```
+
+This makes debugging easier when reviewing console logs.
+
+---
+
+# Logging Levels
+
+| Level | Use                      |
+| ----- | ------------------------ |
+| DEBUG | Development information  |
+| INFO  | Subsystem initialization |
+| WARN  | Recoverable issues       |
+| ERROR | Serious failure          |
+| PANIC | Kernel halt              |
+
+---
+
+# Code Style
+
+Consistency improves readability.
+
+| Element   | Style      |
+| --------- | ---------- |
+| Functions | snake_case |
+| Constants | UPPER_CASE |
+| Structs   | PascalCase |
+
+Example:
+
+```
+void init_scheduler();
+#define MAX_TASKS 64
+```
+
+---
+
+# Stack Usage
+
+Kernel stacks are limited.
+
+Avoid:
+
+* deep recursion
+* large stack allocations
+
+Prefer heap allocations or static buffers when necessary.
+
+---
+
+# Filesystem Development
+
+Filesystem logic must validate:
+
+* directory boundaries
+* cluster chains
+* file sizes
+
+Invalid disk data must never cause memory corruption.
+
+---
+
+# Breaking Changes
+
+Changes that alter system architecture must include documentation describing:
+
+* the previous design
+* the new design
+* migration considerations
+
+Examples:
+
+* memory manager redesign
+* scheduler rewrite
+* filesystem format change
+
+---
+
+# Final Rule
+
+System stability always takes priority over feature speed.
+
+Small, careful changes lead to a more reliable kernel.
