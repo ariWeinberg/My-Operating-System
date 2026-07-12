@@ -20,11 +20,11 @@ typedef struct idt_ptr {
 
 typedef enum gate_type
 {
-    TASK = 0x5,
-    INT16 = 0x6,
-    TRAP16 = 0x7,
-    INT32 = 0xE,
-    TRAP32 = 0xF,
+    TASK_GATE = 0x5,
+    INT16_GATE = 0x6,
+    TRAP16_GATE = 0x7,
+    INT32_GATE = 0xE,
+    TRAP32_GATE = 0xF,
 } gate_type;
 
 #define IDT_SIZE 256
