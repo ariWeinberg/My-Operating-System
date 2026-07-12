@@ -80,7 +80,7 @@ DATA_SEL equ gdt_data - gdt_start
 ; end gdt
 
 
-%include "./stage2/mem_map.s"
+%include "mem_map.s"
 
 [bits 32]
 extern c_main

@@ -8,7 +8,7 @@ SECTIONS
     /* 16-bit real-mode + transition code */
     .text16 :
     {
-        build/bootloader_stage2.o(.text*)
+        ../build/bootloader_stage2.o(.text*)
     }
 
     /* Align before 32-bit code */
@@ -17,7 +17,7 @@ SECTIONS
     /* 32-bit protected-mode C code */
     .text32 :
     {
-        build/kernel.o(.text*)
+        ../build/kernel.o(.text*)
     }
 
     .rodata :
