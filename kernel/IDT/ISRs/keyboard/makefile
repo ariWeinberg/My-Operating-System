@@ -1,4 +1,4 @@
-build_dir=../../build
+build_dir=../../../build
 SCREEN_DRIVER_dir=.
 
 GCC_FLAGS=-m32 -std=gnu17 -g -ffreestanding -fno-pic -fno-pie -nostdlib -nostartfiles -nodefaultlibs
@@ -7,7 +7,7 @@ GCC_CMD=gcc $(GCC_FLAGS)
 # Compile FAT16 main file
 $(build_dir)/keyboard.o: $(SCREEN_DRIVER_dir)/keyboard.c $(SCREEN_DRIVER_dir)/keyboard.h
 	$(GCC_CMD) \
-        -I../../kernel -c $(SCREEN_DRIVER_dir)/keyboard.c -o $(build_dir)/keyboard.o
+        -I../../../kernel -c $(SCREEN_DRIVER_dir)/keyboard.c -o $(build_dir)/keyboard.o
 
 # Default target
 all: $(build_dir)/keyboard.o
