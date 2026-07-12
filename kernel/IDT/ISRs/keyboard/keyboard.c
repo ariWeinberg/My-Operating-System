@@ -5,6 +5,7 @@
 #include "./keyboard.h"
 #include "./scancode_map.h"
 #include "./shifted_scancode_map.h"
+#include "../../../PIC/PIC.h"
 
 
 #define KBD_PORT 0x60
@@ -112,4 +113,5 @@ __attribute__((naked)) void keyboard_isr(void)
 void init_keyboard_irq() {
     // keyboard is IRQ1 -> IDT entry 0x21 after PIC remap
     idt_set_entry(0x21, (uint32_t)keyboard_isr, 0x08, 0x8E, 0);
+    irq_clear_mask(1);
 }
