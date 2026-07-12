@@ -19,6 +19,10 @@ $(build_dir)/bootloader.o: $(stage1_dir)/bootloader.s
 	nasm -f bin -o $(build_dir)/bootloader.o $(stage1_dir)/bootloader.s \
 	-l $(build_dir)/bootloader.lst
 
+# # memory_mapper
+# $(build_dir)/memory_mapper.o: $(stage2_dir)/mem_map.s
+# 	nasm -f elf32 -o $(build_dir)/memory_mapper.o $(stage2_dir)/mem_map.s
+
 # Stage 2 bootloader
 $(build_dir)/bootloader_stage2.o: $(stage2_dir)/bootloader_stage2.s
 	nasm -f elf32 $(stage2_dir)/bootloader_stage2.s -o $(build_dir)/bootloader_stage2.o \
@@ -26,7 +30,7 @@ $(build_dir)/bootloader_stage2.o: $(stage2_dir)/bootloader_stage2.s
 
 # Kernel (C)
 $(build_dir)/kernel.o: $(stage2_dir)/bootloader_stage2.c
-	gcc -m32 -g -ffreestanding -fno-pic -fno-pie -nostdlib -nostartfiles -nodefaultlibs \
+	gcc -std=gnu17 -m32 -g -ffreestanding -fno-pic -fno-pie -nostdlib -nostartfiles -nodefaultlibs \
 	-c $(stage2_dir)/bootloader_stage2.c -o $(build_dir)/kernel.o
 
 # Build FAT16 module via its own Makefile
@@ -94,6 +98,7 @@ $(build_dir)/fat16_error.o \
 $(build_dir)/open.o \
 $(build_dir)/fat16_helpers.o \
 $(build_dir)/parse_dir.o \
+# $(build_dir)/memory_mapper.o \
 $(build_dir)/get_file_size.o 
 	ld -m elf_i386 -T $(etc_dir)/linker.ld \
 	$(build_dir)/bootloader_stage2.o \
@@ -121,6 +126,7 @@ $(build_dir)/get_file_size.o
 	$(build_dir)/get_file_size.o \
 	-o	$(build_dir)/stage2.elf
 
+# 	$(build_dir)/memory_mapper.o 
 $(build_dir)/stage2.bin: $(build_dir)/stage2.elf $(build_dir)/bootloader_stage2.o
 	objcopy -O binary $(build_dir)/stage2.elf $(build_dir)/stage2.bin
 
@@ -146,7 +152,9 @@ run_disk: $(out_dir)/disk.img
 	qemu-system-i386 -drive file=$(out_dir)/disk.img,format=raw -d int,cpu_reset -D qemu.log
 
 debug_disk: $(out_dir)/disk.img
-	qemu-system-i386 -drive file=$(out_dir)/disk.img,format=raw -monitor stdio
+# 	qemu-system-i386 -m 5G -drive file=$(out_dir)/disk.img,format=raw -monitor stdio
+	qemu-system-x86_64 -m 5G -drive file=$(out_dir)/disk.img,format=raw -monitor stdio
+
 
 clean:
 	rm -f $(build_dir)/bootloader.o \
@@ -179,6 +187,7 @@ clean:
 	$(build_dir)/load_clusterd_entry.o \
 	$(build_dir)/parse_dir.o \
 	$(build_dir)/get_file_size.o \
+	$(build_dir)/memory_mapper.o \
 	kernel/build/kernel.bin
 
 	$(MAKE) -C $(final_kernel) clean
