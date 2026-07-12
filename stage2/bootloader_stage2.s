@@ -3,6 +3,19 @@
 
 
 main:
+    ; extern map_memory
+
+    [BITS 16]
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    mov sp, 0x7C00
+
+    call map_memory
+
+    ; now switch to protected/long mode
+
     cli                     ; no interrupts
     call enable_a20
 
@@ -66,6 +79,8 @@ DATA_SEL equ gdt_data - gdt_start
 
 ; end gdt
 
+
+%include "./stage2/mem_map.s"
 
 [bits 32]
 extern c_main
