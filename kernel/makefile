@@ -9,6 +9,7 @@ PIC_DIR := $(kernel_dir)/PIC
 PIT_DIR := $(kernel_dir)/PIT
 IDT_DIR := $(kernel_dir)/IDT
 GDT_DIR := $(kernel_dir)/GDT
+TASKS_DIR := $(kernel_dir)/tasks
 
 GCC_FLAGS := -m32 -std=gnu17 -g -ffreestanding -fno-pic -fno-pie -nostdlib -nostartfiles -nodefaultlibs
 GCC_CMD := gcc $(GCC_FLAGS)
@@ -26,9 +27,11 @@ KERNEL_LINK_OBJECTS := \
 	$(build_dir)/exceptions.o \
 	$(build_dir)/keyboard.o \
 	$(build_dir)/GDT.o \
-	$(build_dir)/interrupt_stub.o
+	$(build_dir)/interrupt_stub.o \
+	$(build_dir)/timer_irq.o \
+	$(build_dir)/tasks.o
 
-.PHONY: all clean utils string screen memory pic pit idt gdt
+.PHONY: all clean utils string screen memory pic pit idt gdt tasks
 
 all: $(build_dir)/kernel.bin
 
@@ -58,7 +61,7 @@ $(build_dir)/memory_managment.o: memory
 memory:
 	$(MAKE) -C $(MEMORY_MANAGMENT_dir) all
 
-$(build_dir)/IDT.o $(build_dir)/interrupt_stub.o $(build_dir)/exceptions.o $(build_dir)/keyboard.o: idt
+$(build_dir)/IDT.o $(build_dir)/interrupt_stub.o $(build_dir)/exceptions.o $(build_dir)/keyboard.o $(build_dir)/timer_irq.o: idt
 
 idt:
 	$(MAKE) -C $(IDT_DIR) all
@@ -75,6 +78,11 @@ pit:
 
 $(build_dir)/GDT.o: gdt
 
+$(build_dir)/tasks.o: tasks
+
+tasks:
+	$(MAKE) -C $(TASKS_DIR) all
+
 gdt:
 	$(MAKE) -C $(GDT_DIR) all
 
@@ -86,5 +94,6 @@ $(build_dir)/kernel.bin: $(build_dir)/kernel.elf
 
 clean:
 	rm -f $(KERNEL_LINK_OBJECTS) \
+	$(build_dir)/timer_irq.o \
 	$(build_dir)/kernel.elf \
 	$(build_dir)/kernel.bin

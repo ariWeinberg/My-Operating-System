@@ -4,6 +4,7 @@ SCREEN_DRIVER_dir=.
 ISRs_DIR=./ISRs
 EXCEPTIONS_DIR=$(ISRs_DIR)/exceptions
 KEYBOARD_DIR=$(ISRs_DIR)/keyboard
+TIMER_DIR=$(ISRs_DIR)/timer
 
 GCC_FLAGS=-m32 -std=gnu17 -g -ffreestanding -fno-pic -fno-pie -nostdlib -nostartfiles -nodefaultlibs
 GCC_CMD=gcc $(GCC_FLAGS)
@@ -25,5 +26,8 @@ $(build_dir)/keyboard.o:
 $(build_dir)/exceptions.o:
 	@$(MAKE) -C $(EXCEPTIONS_DIR) all
 
+$(build_dir)/timer_irq.o:
+	@$(MAKE) -C $(TIMER_DIR) all
+
 # Default target
-all: $(build_dir)/IDT.o $(build_dir)/interrupt_stub.o $(build_dir)/exceptions.o $(build_dir)/keyboard.o
+all: $(build_dir)/IDT.o $(build_dir)/interrupt_stub.o $(build_dir)/exceptions.o $(build_dir)/keyboard.o $(build_dir)/timer_irq.o
