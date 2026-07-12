@@ -107,9 +107,11 @@ int store_incoming_bytes(DEVICE *drv, uint16_t words, void *buf)
     for (uint16_t i = 0; i < words; i++) {
         uint16_t data;
 
-        __asm__ volatile ("inw %1, %0"
-                          : "=a"(data)
-                          : "Nd"(drv->base + REG_DATA));
+        __asm__ volatile (
+            "inw %w1, %0"
+            : "=a"(data)
+            : "Nd"((uint16_t)(drv->base + REG_DATA))
+        );
 
         *(uint8_t *)buf++ = data & 0xFF;
         *(uint8_t *)buf++ = data >> 8;
