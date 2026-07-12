@@ -1,87 +1,90 @@
-# Directories
-build_dir=./build
-kernel_dir=.
+build_dir := ./build
+kernel_dir := .
 
-UTILS_dir=$(kernel_dir)/UTILS
-STRING_dir=$(kernel_dir)/STRING
-SCREEN_DRIVER_dir=$(kernel_dir)/SCREEN_DRIVER
-MEMORY_MANAGMENT_dir=$(kernel_dir)/MEMORY_MANAGMENT
-STD_dir=$(kernel_dir)/STD
+UTILS_dir := $(kernel_dir)/UTILS
+STRING_dir := $(kernel_dir)/STRING
+SCREEN_DRIVER_dir := $(kernel_dir)/SCREEN_DRIVER
+MEMORY_MANAGMENT_dir := $(kernel_dir)/MEMORY_MANAGMENT
+PIC_DIR := $(kernel_dir)/PIC
+PIT_DIR := $(kernel_dir)/PIT
+IDT_DIR := $(kernel_dir)/IDT
+GDT_DIR := $(kernel_dir)/GDT
 
-PIC_DIR=$(kernel_dir)/PIC
-PIT_DIR=$(kernel_dir)/PIT
-IDT_DIR=$(kernel_dir)/IDT
-KEYBOARD_DIR=$(IDT_DIR)/ISRs
-GDT_DIR=$(kernel_dir)/GDT
+GCC_FLAGS := -m32 -std=gnu17 -g -ffreestanding -fno-pic -fno-pie -nostdlib -nostartfiles -nodefaultlibs
+GCC_CMD := gcc $(GCC_FLAGS)
 
-# Kernel object
-$(build_dir)/kernel.o: $(kernel_dir)/main.c
-	gcc -std=gnu17 -m32 -g -ffreestanding -fno-pic -fno-pie -nostdlib -nostartfiles -nodefaultlibs \
-        -c $< -o $@
-        # -I$(UTILS_dir) -I$(STRING_dir) -I$(SCREEN_DRIVER_dir) -I$(MEMORY_MANAGMENT_dir) -I$(STD_dir) \
+KERNEL_LINK_OBJECTS := \
+	$(build_dir)/kernel.o \
+	$(build_dir)/asm_utils.o \
+	$(build_dir)/utils.o \
+	$(build_dir)/string.o \
+	$(build_dir)/screen_driver.o \
+	$(build_dir)/memory_managment.o \
+	$(build_dir)/PIC.o \
+	$(build_dir)/PIT.o \
+	$(build_dir)/IDT.o \
+	$(build_dir)/exceptions.o \
+	$(build_dir)/keyboard.o \
+	$(build_dir)/GDT.o \
+	$(build_dir)/interrupt_stub.o
 
-# Build modules
-$(build_dir)/asm_utils.o $(build_dir)/utils.o:
-	@$(MAKE) -C $(UTILS_dir) all
-
-$(build_dir)/string.o:
-	@$(MAKE) -C $(STRING_dir) all
-
-$(build_dir)/screen_driver.o:
-	@$(MAKE) -C $(SCREEN_DRIVER_dir) all
-
-$(build_dir)/memory_managment.o:
-	@$(MAKE) -C $(MEMORY_MANAGMENT_dir) all
-
-$(build_dir)/IDT.o $(build_dir)/interrupt_stub.o $(build_dir)/exceptions.o $(build_dir)/keyboard.o:
-	@$(MAKE) -C $(IDT_DIR) all
-
-$(build_dir)/PIC.o:
-	@$(MAKE) -C $(PIC_DIR) all
-
-$(build_dir)/PIT.o:
-	@$(MAKE) -C $(PIT_DIR) all
-
-$(build_dir)/GDT.o:
-	@$(MAKE) -C $(GDT_DIR) all
-
-# Link all into ELF
-$(build_dir)/kernel.elf: $(build_dir)/kernel.o \
-                        $(build_dir)/asm_utils.o $(build_dir)/utils.o \
-                        $(build_dir)/string.o \
-                        $(build_dir)/screen_driver.o \
-                        $(build_dir)/memory_managment.o \
-						$(build_dir)/PIC.o \
-						$(build_dir)/PIT.o \
-						$(build_dir)/IDT.o \
-						$(build_dir)/exceptions.o \
-						$(build_dir)/keyboard.o	\
-						$(build_dir)/GDT.o \
-						$(build_dir)/interrupt_stub.o
-	ld -m elf_i386 -T linker.ld -o $@ $^
-
-
-
-# Convert to flat binary
-$(build_dir)/kernel.bin: $(build_dir)/kernel.elf
-	@objcopy -O binary $< $@
-
-# Clean
-clean:
-	@rm -f $(build_dir)/kernel.o \
-	      $(build_dir)/asm_utils.o $(build_dir)/utils.o \
-	      $(build_dir)/string.o \
-	      $(build_dir)/screen_driver.o \
-	      $(build_dir)/memory_managment.o \
-	      $(build_dir)/kernel.elf \
-	      $(build_dir)/kernel.bin \
-	      $(build_dir)/IDT.o \
-	      $(build_dir)/keyboard.o \
-	      $(build_dir)/PIC.o \
-	      $(build_dir)/PIT.o \
-		  $(build_dir)/interrupt_stub.o \
-		  $(build_dir)/exceptions.o \
-		  $(build_dir)/GDT.o
-	@echo "successfully deleted all build files."
+.PHONY: all clean utils string screen memory pic pit idt gdt
 
 all: $(build_dir)/kernel.bin
+
+$(build_dir):
+	mkdir -p $@
+
+$(build_dir)/kernel.o: $(kernel_dir)/main.c | $(build_dir)
+	$(GCC_CMD) -c $< -o $@
+
+$(build_dir)/asm_utils.o $(build_dir)/utils.o: utils
+
+utils:
+	$(MAKE) -C $(UTILS_dir) all
+
+$(build_dir)/string.o: string
+
+string:
+	$(MAKE) -C $(STRING_dir) all
+
+$(build_dir)/screen_driver.o: screen
+
+screen:
+	$(MAKE) -C $(SCREEN_DRIVER_dir) all
+
+$(build_dir)/memory_managment.o: memory
+
+memory:
+	$(MAKE) -C $(MEMORY_MANAGMENT_dir) all
+
+$(build_dir)/IDT.o $(build_dir)/interrupt_stub.o $(build_dir)/exceptions.o $(build_dir)/keyboard.o: idt
+
+idt:
+	$(MAKE) -C $(IDT_DIR) all
+
+$(build_dir)/PIC.o: pic
+
+pic:
+	$(MAKE) -C $(PIC_DIR) all
+
+$(build_dir)/PIT.o: pit
+
+pit:
+	$(MAKE) -C $(PIT_DIR) all
+
+$(build_dir)/GDT.o: gdt
+
+gdt:
+	$(MAKE) -C $(GDT_DIR) all
+
+$(build_dir)/kernel.elf: $(KERNEL_LINK_OBJECTS)
+	ld -m elf_i386 -T linker.ld $^ -o $@
+
+$(build_dir)/kernel.bin: $(build_dir)/kernel.elf
+	objcopy -O binary $< $@
+
+clean:
+	rm -f $(KERNEL_LINK_OBJECTS) \
+	$(build_dir)/kernel.elf \
+	$(build_dir)/kernel.bin

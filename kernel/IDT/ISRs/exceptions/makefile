@@ -1,4 +1,4 @@
-build_dir=../../../build
+build_dir=../../build
 SCREEN_DRIVER_dir=.
 
 GCC_FLAGS=-m32 -std=gnu17 -g -ffreestanding -fno-pic -fno-pie -nostdlib -nostartfiles -nodefaultlibs
