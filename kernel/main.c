@@ -7,9 +7,10 @@
 #include "UTILS/utils.h"
 #include "STD/bool.h"
 #include "GDT/GDT.h"
+#include "./MEMORY_MANAGMENT/memory_managment.h"
 
 
-
+void schedule_next_task(void);
 void timer_handler(void);
 void timer_isr(void);
 
@@ -21,6 +22,7 @@ bool do_sched = false;
 
 void task_a() {while(1){print_string("A"); sleep(500);}}
 void task_b() {while(1){print_string("B"); sleep(2000);}}
+void task_c() {while(1){print_string("C"); sleep(100);}}
 
 typedef struct {
     uint32_t esp;
@@ -74,6 +76,7 @@ static void kernel_setup_interrupts(void) {
 
     create_task(&task_a);
     create_task(&task_b);
+    // create_task(&task_c);
 
     pit_init(1000);
     interrupts_enable();

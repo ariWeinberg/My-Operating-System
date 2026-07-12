@@ -27,7 +27,8 @@ uint8_t *idt_create_stub(void *isr, uint8_t interrupt_id)
 {
     /* 1. Build a custom machine-code stub for this specific ID */
     // Opcode 0x6A: push imm8
-    uint8_t *isr_stub = &isr_stubs[interrupt_id];
+    // uint8_t *isr_stub = &isr_stubs[interrupt_id];
+    uint8_t *isr_stub = isr_stubs[interrupt_id];
     isr_stub[0] = 0x6A;
     isr_stub[1] = (uint8_t)interrupt_id;
     

@@ -16,7 +16,7 @@ GDT_DIR=$(kernel_dir)/GDT
 
 # Kernel object
 $(build_dir)/kernel.o: $(kernel_dir)/main.c
-	gcc -m32 -g -ffreestanding -fno-pic -fno-pie -nostdlib -nostartfiles -nodefaultlibs \
+	gcc -std=gnu17 -m32 -g -ffreestanding -fno-pic -fno-pie -nostdlib -nostartfiles -nodefaultlibs \
         -c $< -o $@
         # -I$(UTILS_dir) -I$(STRING_dir) -I$(SCREEN_DRIVER_dir) -I$(MEMORY_MANAGMENT_dir) -I$(STD_dir) \
 

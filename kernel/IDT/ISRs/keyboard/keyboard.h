@@ -1,3 +1,4 @@
+#include "../../IDT.h"
 #include "../../../STD/int.h"
 #include "../../../UTILS/asm_utils.h" // inb/outb
 
@@ -13,5 +14,6 @@ extern uint32_t current_char_in;
 extern uint32_t current_char_out;
 
 
+void handle_scancode(uint8_t scancode);
 void init_keyboard_irq();
 void key_map_task();

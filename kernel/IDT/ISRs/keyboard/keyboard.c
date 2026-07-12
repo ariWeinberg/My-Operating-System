@@ -70,7 +70,7 @@ void handle_scancode(uint8_t scancode)
     char buf[5];
     // print_string("in KB handller\n");
     char_buffer[current_char_in++] = scancode_to_char(scancode);
-    // print_string(uint8_to_hex_prefixed(scancode, buf));
+    print_string(uint8_to_hex_prefixed(scancode, buf));
     // put_char('\n',0x0F);
                 // put_char(char_buffer[current_char_out++], 0x0F);
     // put_char('\n',0x0F);

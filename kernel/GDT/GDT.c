@@ -18,7 +18,7 @@ static inline gdt_entry_t gdt_make_entry(uint32_t base, uint32_t limit,
 static gdt_entry_t gdt[3];
 static gdt_ptr_t   gdtr;
 
-extern void gdt_load(uint32_t *gdtr_ptr);
+extern void gdt_load(gdt_ptr_t *gdtr_ptr);
 
 void gdt_init(void)
 {
@@ -32,7 +32,7 @@ void gdt_init(void)
     gdt_load(&gdtr);
 }
 
-void gdt_load(uint32_t *gdtr_ptr)
+void gdt_load(gdt_ptr_t *gdtr_ptr)
 {
     __asm__ volatile ("lgdt (%0)" : : "r"(gdtr_ptr));
 }
