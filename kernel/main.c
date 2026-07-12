@@ -74,8 +74,8 @@ static void kernel_setup_interrupts(void) {
     irq_clear_mask(0); // timer IRQ
     irq_clear_mask(1); // keyboard IRQ
 
-    create_task(&task_a);
-    create_task(&task_b);
+    // create_task(&task_a);
+    // create_task(&task_b);
     // create_task(&task_c);
 
     pit_init(1000);

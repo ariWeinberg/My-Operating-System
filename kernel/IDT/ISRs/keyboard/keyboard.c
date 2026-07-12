@@ -1,8 +1,10 @@
 #include "../../../UTILS/utils.h" // inb/outb
 #include "../../../STD/defs.h"
+#include "../../../STD/bool.h"
 #include "../../../SCREEN_DRIVER/screen_driver.h"
 #include "./keyboard.h"
 #include "./scancode_map.h"
+#include "./shifted_scancode_map.h"
 
 
 #define KBD_PORT 0x60
@@ -16,11 +18,33 @@ uint32_t current_scancode_out = 0;
 uint32_t current_char_in = 0;
 uint32_t current_char_out = 0;
 
+bool is_l_shifted = false;
 
 char scancode_to_char(uint8_t scancode)
 {
+    if (scancode == 0x2A)
+    {
+        is_l_shifted = true;
+        return '\0';
+    }
+    if (scancode == 0xAA)
+    {
+        is_l_shifted = false;
+        return '\0';
+    }
     if (scancode > 0x80)
     return '\0';
+    if (is_l_shifted)
+    {
+        for (int i = 0; i < map_size; i++)
+        {
+            if (shifted_scancode_map_indexes[i] == scancode)
+            {
+                return shifted_scancode_map_values[i];
+            }
+        }
+    }
+    
     for (int i = 0; i < map_size; i++)
     {
         if (scancode_map_indexes[i] == scancode)
@@ -43,7 +67,7 @@ void handle_scancode(uint8_t scancode)
     char buf[5];
     // print_string("in KB handller\n");
     char_buffer[current_char_in++] = scancode_to_char(scancode);
-    print_string(uint8_to_hex_prefixed(scancode, buf));
+    // print_string(uint8_to_hex_prefixed(scancode, buf));
     // put_char('\n',0x0F);
                 // put_char(char_buffer[current_char_out++], 0x0F);
     // put_char('\n',0x0F);
