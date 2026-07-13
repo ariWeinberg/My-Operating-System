@@ -12,6 +12,7 @@
 #include "./tasks/tasks.h"
 #include "kernel.h"
 #include "stdin/stdin.h"
+#include "STRING/string.h"
 
 
 void task_a(void);
@@ -110,7 +111,13 @@ void echo_task(void)
         if (str == NULL)
         {
             print_string("oopsi... an error occourd.\n");
-        } 
+            k_panic(); // later add error messages...
+            return;
+        }
+        if (!strcmp(str, "\n\0"))
+        {
+            continue;
+        }
         print_string(str);
     }
     

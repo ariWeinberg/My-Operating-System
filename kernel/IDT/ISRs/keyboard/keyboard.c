@@ -63,6 +63,7 @@ void key_map_task()
         handle_scancode(' ');
     }
 }
+
 void handle_scancode(uint8_t scancode)
 {
     char buf[5];
@@ -76,7 +77,6 @@ void handle_scancode(uint8_t scancode)
 
 // simple C handler for keyboard scan codes
 void keyboard_handler_c(uint8_t scancode) {
-    scancode = inb(0x60);
     if (current_scancode_in < 999)
     scancode_buffer[current_scancode_in++] = scancode;
         handle_scancode(scancode);
