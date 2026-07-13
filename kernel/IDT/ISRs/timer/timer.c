@@ -8,6 +8,7 @@
 
 volatile uint32_t k_ticks = 0;
 volatile bool need_schedule = false;
+volatile uint32_t pending_resume_eip = 0;
 
 void timer_handler(void)
 {
@@ -66,35 +67,46 @@ void timer_isr(void)
         "add $4, %%esp\n\t"
 
         "cmpl $0, need_schedule\n\t"
-        "je 1f\n\t"
-        "cmpl $0, critical\n\t"
-        "jg 1f\n\t"
-        "cmpl $2, task_count\n\t"
-        "jl 1f\n\t"
-
-        // Save the interrupted task's complete timer frame.
-        "movl running_task, %%edx\n\t"
-        "movl %%esp, (%%edx)\n\t"
-
-        // Select the next task, wrapping at task_count.
-        "movl current_index, %%eax\n\t"
-        "incl %%eax\n\t"
-        "cmpl task_count, %%eax\n\t"
-        "jl 2f\n\t"
-        "xorl %%eax, %%eax\n\t"
-        "2:\n\t"
-        "movl %%eax, current_index\n\t"
-
-        // Load the next task's complete timer frame.
-        "leal task_list(,%%eax,4), %%edx\n\t"
-        "movl %%edx, running_task\n\t"
-        "movl (%%edx), %%esp\n\t"
+        "je .Ltimer_no_schedule\n\t"
+        "movl 36(%%esp), %%eax\n\t"
+        "movl %%eax, pending_resume_eip\n\t"
+        "movl $.Ltimer_scheduler_resume, 36(%%esp)\n\t"
         "movl $0, need_schedule\n\t"
 
-        "1:\n\t"
+        ".Ltimer_no_schedule:\n\t"
         "popa\n\t"
         "add $4, %%esp\n\t"
         "iret\n\t"
+
+        ".Ltimer_scheduler_resume:\n\t"
+        "cli\n\t"
+        "cmpl $0, critical\n\t"
+        "jg .Ltimer_resume_original\n\t"
+        "cmpl $2, task_count\n\t"
+        "jl .Ltimer_resume_original\n\t"
+
+        "movl current_index, %%eax\n\t"
+        "incl %%eax\n\t"
+        "cmpl task_count, %%eax\n\t"
+        "jl .Ltimer_next_index_ready\n\t"
+        "xorl %%eax, %%eax\n\t"
+        ".Ltimer_next_index_ready:\n\t"
+        "movl %%eax, current_index\n\t"
+        "leal task_list(,%%eax,4), %%edx\n\t"
+
+        "pushl pending_resume_eip\n\t"
+        "pushl %%edx\n\t"
+        "pushl $.Ltimer_scheduler_cleanup\n\t"
+        "jmp context_switch\n\t"
+
+        ".Ltimer_scheduler_cleanup:\n\t"
+        "addl $4, %%esp\n\t"
+        "sti\n\t"
+        "ret\n\t"
+
+        ".Ltimer_resume_original:\n\t"
+        "sti\n\t"
+        "jmp *pending_resume_eip\n\t"
         :
         :
         : "eax", "edx", "memory"

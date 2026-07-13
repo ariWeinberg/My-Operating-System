@@ -24,7 +24,7 @@ void context_switch(Task* next_task) {
         "movl (%eax), %esp\n\t"   // 5. Load the NEW task's ESP
 
         "popal\n\t"               // 6. Restore new task's state
-        "iret\n\t"                 // 7. Jump to new task's saved EIP
+        "ret\n\t"                 // 7. Jump to new task's saved EIP
     );
 }
 
@@ -57,30 +57,14 @@ void task_starter(void (*func)()) {
 
 
 void k_create_task(void (*func)()) {
-    if (task_count >= 6 || func == 0)
-    {
-        return;
-    }
-
     uint32_t raw = (uint32_t)malloc(4096 + 32);
-    if (raw == 0)
-    {
-        return;
-    }
-
     uint32_t* stack = (uint32_t*)((raw + 4096) & ~0xF);
 
-    *(--stack) = (uint32_t)func;         // task_starter argument
-    *(--stack) = 0;                      // task_starter return address
-    *(--stack) = 0x202;                  // EFLAGS: interrupts enabled
-    *(--stack) = 0x08;                   // CS: kernel code segment
-    *(--stack) = (uint32_t)task_starter; // initial EIP
-    *(--stack) = 0x20;                   // timer IRQ stub ID
-
-    for (int i = 0; i < 8; i++)
-    {
-        *(--stack) = 0;                  // pusha frame
-    }
+    *(--stack) = (uint32_t)func;         // Argument for task_starter
+    *(--stack) = 0;                      // Dummy return address
+    *(--stack) = (uint32_t)task_starter; // context_switch returns to here
+    
+    for(int i=0; i<8; i++) *(--stack) = 0; // pushal frame
 
     task_list[task_count].esp = (uint32_t)stack;
     task_count++;
