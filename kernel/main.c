@@ -40,6 +40,7 @@ static void k_main(void)
 {
     clear_screen();
     print_string("hello from kernel!\n");
+    init_tasks();
     k_setup_tasks();
     k_loop();
 }
@@ -85,17 +86,16 @@ static void kernel_setup_interrupts(void) {
 
 static void k_setup_tasks(void)
 {
-    k_create_task(&stdin_loop);
-    k_create_task(&echo_task);
-    k_create_task(&task_a);
-    k_create_task(&task_b);
-    k_create_task(&task_c);
+    k_create_and_register_task(&stdin_loop);
+    k_create_and_register_task(&echo_task);
+    k_create_and_register_task(&task_a);
+    k_create_and_register_task(&task_b);
+    k_create_and_register_task(&task_c);
 }
 
 void k_sleep(uint16_t ms)
 {
-    uint32_t start_ms = k_ticks;
-    while (start_ms + (ms) > k_ticks) ;
+    scheduler_sleep(ms);
 }
 
 

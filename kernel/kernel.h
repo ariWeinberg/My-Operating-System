@@ -5,7 +5,7 @@
 #include "STD/int.h"
 #include "STD/defs.h"
 
-void k_create_task(void (*func)());
+void k_create_and_register_task(void (*func)());
 void k_sleep(uint16_t ms);
 void timer_handler(void);
 void timer_isr(void);

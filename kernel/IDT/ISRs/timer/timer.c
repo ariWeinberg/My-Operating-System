@@ -13,6 +13,7 @@ volatile uint32_t pending_resume_eip = 0;
 void timer_handler(void)
 {
     k_ticks ++;
+    scheduler_tick();
     if (k_ticks % 2 == 0) {
         // schedule_next_task();
         need_schedule = true;
@@ -25,32 +26,6 @@ void init_timer_irq(void)
     idt_set_interrupt_32(0x20, &timer_isr);
     irq_clear_mask(0); // timer IRQ
 }
-
-// __attribute__((naked))
-// void timer_isr(void) {
-//     asm volatile(
-//         "pusha\n\t"
-
-//         // Send EOI IMMEDIATELY so other interrupts (keyboard) can fire
-//         "movb $0x20, %%al\n\t"
-//         "outb %%al, $0x20\n\t"
-//         "outb %%al, $0xA0\n\t"
-
-//         "mov 32(%%esp), %%eax\n\t"
-//         "push %%eax\n\t"
-//         "call timer_handler\n\t"
-//         "cmpl $0, need_schedule\n\t"
-//         "je after_scedhuler\n\t"
-//         "call schedule_next_task\n\t"
-//         "after_scedhuler:\n\t"
-//         "add $4, %%esp\n\t"
-
-//         "popa\n\t"
-//         "add $4, %%esp\n\t"
-//         "iret\n\t"
-//         : : : "memory"
-//     );
-// }
 
 __attribute__((naked))
 void timer_isr(void)
@@ -85,14 +60,10 @@ void timer_isr(void)
         "cmpl $2, task_count\n\t"
         "jl .Ltimer_resume_original\n\t"
 
-        "movl current_index, %%eax\n\t"
-        "incl %%eax\n\t"
-        "cmpl task_count, %%eax\n\t"
-        "jl .Ltimer_next_index_ready\n\t"
-        "xorl %%eax, %%eax\n\t"
-        ".Ltimer_next_index_ready:\n\t"
-        "movl %%eax, current_index\n\t"
-        "leal task_list(,%%eax,4), %%edx\n\t"
+        "call choose_next_task\n\t"
+        "testl %%eax, %%eax\n\t"
+        "jz .Ltimer_resume_original\n\t"
+        "movl %%eax, %%edx\n\t"
 
         "pushl pending_resume_eip\n\t"
         "pushl %%edx\n\t"
