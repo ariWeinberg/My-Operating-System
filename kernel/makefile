@@ -10,6 +10,7 @@ PIT_DIR := $(kernel_dir)/PIT
 IDT_DIR := $(kernel_dir)/IDT
 GDT_DIR := $(kernel_dir)/GDT
 TASKS_DIR := $(kernel_dir)/tasks
+STDIN_DIR := $(kernel_dir)/stdin
 
 GCC_FLAGS := -m32 -std=gnu17 -g -ffreestanding -fno-pic -fno-pie -nostdlib -nostartfiles -nodefaultlibs
 GCC_CMD := gcc $(GCC_FLAGS)
@@ -29,9 +30,10 @@ KERNEL_LINK_OBJECTS := \
 	$(build_dir)/GDT.o \
 	$(build_dir)/interrupt_stub.o \
 	$(build_dir)/timer_irq.o \
+	$(build_dir)/stdin.o \
 	$(build_dir)/tasks.o
 
-.PHONY: all clean utils string screen memory pic pit idt gdt tasks
+.PHONY: all clean utils string screen memory pic pit idt gdt tasks stdin
 
 all: $(build_dir)/kernel.bin
 
@@ -82,6 +84,11 @@ $(build_dir)/tasks.o: tasks
 
 tasks:
 	$(MAKE) -C $(TASKS_DIR) all
+
+$(build_dir)/stdin.o: stdin
+
+stdin:
+	$(MAKE) -C $(STDIN_DIR) all
 
 gdt:
 	$(MAKE) -C $(GDT_DIR) all

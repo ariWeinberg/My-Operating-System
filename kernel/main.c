@@ -10,24 +10,14 @@
 #include "./MEMORY_MANAGMENT/memory_managment.h"
 #include "./IDT/ISRs/timer/timer.h"
 #include "./tasks/tasks.h"
-
-
-void k_create_task(void (*func)());
-void k_sleep(uint16_t ms);
-void schedule_next_task(void);
-void timer_handler(void);
-void timer_isr(void);
-static void k_main(void);
-static void k_init(void);
-static void k_loop(void);
-static void k_panic(void);
-static void k_die(void);
-static void k_setup_tasks(void);
+#include "kernel.h"
+#include "stdin/stdin.h"
 
 
 void task_a(void);
 void task_b(void);
 void task_c(void);
+void echo_task(void);
 
 
 
@@ -57,14 +47,8 @@ static void k_loop(void)
 {
     while(1)
     {
-        if(current_char_out < current_char_in)
-        {
-            put_char(char_buffer[current_char_out++], 0x0F);
-        }
-        // if (k_ticks % 1 == 0)
-        // {
-        //     schedule_next_task();
-        // }
+        // const char c = peek_char();
+        // put_char(c, 0x0F);
     }
 }
 
@@ -100,6 +84,8 @@ static void kernel_setup_interrupts(void) {
 
 static void k_setup_tasks(void)
 {
+    k_create_task(&stdin_loop);
+    k_create_task(&echo_task);
     k_create_task(&task_a);
     k_create_task(&task_b);
     k_create_task(&task_c);
@@ -115,6 +101,20 @@ void k_sleep(uint16_t ms)
 
 
 
-void task_a(void) {while(1){print_string("A"); k_sleep(500);}}
-void task_b(void) {while(1){print_string("B"); k_sleep(2000);}}
-void task_c(void) {while(1){print_string("C"); k_sleep(100);}}
+void echo_task(void)
+{
+    print_string("enter lines and i will echo them...\n\n");
+    while (1)
+    {
+        const char *str = read_line();
+        if (str == NULL)
+        {
+            print_string("oopsi... an error occourd.\n");
+        } 
+        print_string(str);
+    }
+    
+}
+void task_a(void) {while(1){print_string("A"); k_sleep(5000);}}
+void task_b(void) {while(1){print_string("B"); k_sleep(20000);}}
+void task_c(void) {while(1){print_string("C"); k_sleep(1000);}}
