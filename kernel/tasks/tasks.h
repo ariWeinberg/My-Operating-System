@@ -8,5 +8,8 @@ __attribute__((naked)) void context_switch(Task* next_task);
 void schedule_next_task(void);
 void task_starter(void (*func)());
 void k_create_task(void (*func)());
+void schedule_next_task(void);
+void enter_critical(void);
+void exit_critical(void);
 
 #endif

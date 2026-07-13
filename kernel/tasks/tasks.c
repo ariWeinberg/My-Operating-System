@@ -1,9 +1,11 @@
 #include "tasks.h"
 
 
-Task task_list[4]; 
+Task task_list[6]; 
 int current_index = 0;
 int task_count = 1; 
+
+uint32_t critical = 0;
 
 // Pointer to the task currently owning the CPU
 Task* volatile running_task = &task_list[0];
@@ -25,6 +27,10 @@ void context_switch(Task* next_task) {
 }
 
 void schedule_next_task(void) {
+    if (critical > 0)
+    {
+        return;
+    }
     int next_index = (current_index + 1) % task_count;
     if (next_index == current_index) return; // Don't switch to yourself
 
@@ -56,3 +62,15 @@ void k_create_task(void (*func)()) {
     task_count++;
 }
 
+void enter_critical(void)
+{
+    critical++;
+}
+
+void exit_critical(void)
+{
+    if (critical > 0)
+    {
+        critical--;
+    }
+}
