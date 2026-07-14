@@ -5,8 +5,14 @@
 #include "../STD/defs.h"
 #include "../tasks/tasks.h"
 #include "SCREEN_DRIVER/screen_driver.h"
+#include "../tasks/task.h"
 
 #define STDIN_SIZE (1024u * 1024u)
+
+
+WaitQueue stdin_waiters = {0};
+WaitQueue stdin_line_waiters = {0};
+
 
 static volatile char *const stdin = (volatile char *)0xD00000;
 volatile uint32_t stdin_in_count = 0;
@@ -14,6 +20,12 @@ volatile uint32_t stdin_out_count = 0;
 volatile uint32_t stdin_peek_count = 0;
 
 volatile uint32_t new_line_count = 0;
+
+void stdin_init()
+{
+    wait_queue_init(&stdin_waiters);
+    wait_queue_init(&stdin_line_waiters);
+}
 
 void stdin_insert(char c)
 {
@@ -27,7 +39,9 @@ void stdin_insert(char c)
         if (c == '\n')
         {
             new_line_count++;
+            scheduler_wake_one(&stdin_line_waiters);
         }
+        scheduler_wake_one(&stdin_waiters);
     }
 }
 
@@ -35,7 +49,7 @@ char read_char(void)
 {
     while (stdin_out_count >= stdin_in_count)
     {
-        asm volatile("pause");
+        scheduler_wait(&stdin_waiters);
     }
     char c = stdin[stdin_out_count++];
     if (c == '\n' && new_line_count > 0)
@@ -44,11 +58,12 @@ char read_char(void)
     }
     return c; 
 }
+
 char peek_char(void)
 {
     while (stdin_peek_count >= stdin_in_count)
     {
-        asm volatile("pause");
+        scheduler_wait(&stdin_waiters);
     }
     return stdin[stdin_peek_count++];
 }
@@ -57,7 +72,7 @@ char* read_line(void)
 {
     while (new_line_count < 1)
     {
-        asm volatile("pause");
+        scheduler_wait(&stdin_line_waiters);
     }
     enter_critical();
     uint32_t out_count = stdin_out_count;
