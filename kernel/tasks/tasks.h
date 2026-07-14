@@ -6,6 +6,8 @@
 #include "task.h"
 
 
+extern Task* volatile running_task;
+
 __attribute__((naked)) void context_switch(Task* next_task);
 void task_starter(void (*func)());
 void k_create_and_register_task(void (*func)());
