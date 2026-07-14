@@ -9,5 +9,8 @@ $(build_dir)/tasks.o: $(TASKS_dir)/tasks.c $(TASKS_dir)/task.h $(TASKS_dir)/task
 	$(GCC_CMD) \
         -I../../kernel -c $(TASKS_dir)/tasks.c -o $(build_dir)/tasks.o
 
+$(build_dir)/semaphore.o: $(TASKS_dir)/semaphore.c $(TASKS_dir)/semaphore.h $(TASKS_dir)/tasks.h
+	$(GCC_CMD) \
+		-I../../kernel -c $(TASKS_dir)/semaphore.c -o $(build_dir)/semaphore.o
 # Default target
-all: $(build_dir)/tasks.o
+all: $(build_dir)/tasks.o $(build_dir)/semaphore.o
