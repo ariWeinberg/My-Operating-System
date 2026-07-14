@@ -28,8 +28,11 @@ void scheduler_tick(void);
 
 void wait_queue_init(WaitQueue *queue);
 void scheduler_wait(WaitQueue *queue);
+void scheduler_wake_one_locked(WaitQueue *queue);
 void scheduler_wake_one(WaitQueue *queue);
+void scheduler_wake_all_locked(WaitQueue *queue);
 void scheduler_wake_all(WaitQueue *queue);
+
 
 void idle_task(void);
 

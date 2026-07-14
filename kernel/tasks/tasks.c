@@ -336,35 +336,33 @@ void scheduler_wait(WaitQueue *queue)
         context_switch(next);
 }
 
-void scheduler_wake_one(WaitQueue *queue)
+void scheduler_wake_one_locked(WaitQueue *queue)
 {
-    if (queue == NULL)
+    if (queue == NULL || queue->head == NULL)
         return;
 
-    interrupts_disable();
-
     Task *task = queue->head;
-    if (task != NULL)
-    {
-        queue->head = task->wait_next;
+    queue->head = task->wait_next;
 
-        if (queue->head == NULL)
-            queue->tail = NULL;
+    if (queue->head == NULL)
+        queue->tail = NULL;
 
-        task->wait_next = NULL;
-        task->waiting_on = NULL;
-        task->state = TASK_READY;
-    }
+    task->wait_next = NULL;
+    task->waiting_on = NULL;
+    task->state = TASK_READY;
+}
 
+void scheduler_wake_one(WaitQueue *queue)
+{
+    interrupts_disable();
+    scheduler_wake_one_locked(queue);
     interrupts_enable();
 }
 
-void scheduler_wake_all(WaitQueue *queue)
+void scheduler_wake_all_locked(WaitQueue *queue)
 {
     if (queue == NULL)
         return;
-
-    interrupts_disable();
 
     while (queue->head != NULL)
     {
@@ -378,7 +376,12 @@ void scheduler_wake_all(WaitQueue *queue)
         task->waiting_on = NULL;
         task->state = TASK_READY;
     }
+}
 
+void scheduler_wake_all(WaitQueue *queue)
+{
+    interrupts_disable();
+    scheduler_wake_all_locked(queue);
     interrupts_enable();
 }
 
