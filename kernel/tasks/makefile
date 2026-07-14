@@ -12,5 +12,10 @@ $(build_dir)/tasks.o: $(TASKS_dir)/tasks.c $(TASKS_dir)/task.h $(TASKS_dir)/task
 $(build_dir)/semaphore.o: $(TASKS_dir)/semaphore.c $(TASKS_dir)/semaphore.h $(TASKS_dir)/tasks.h
 	$(GCC_CMD) \
 		-I../../kernel -c $(TASKS_dir)/semaphore.c -o $(build_dir)/semaphore.o
+
+$(build_dir)/mutex.o: $(TASKS_dir)/mutex.c $(TASKS_dir)/mutex.h $(TASKS_dir)/semaphore.h $(TASKS_dir)/tasks.h
+	$(GCC_CMD) \
+		-I../../kernel -c $(TASKS_dir)/mutex.c -o $(build_dir)/mutex.o
+
 # Default target
-all: $(build_dir)/tasks.o $(build_dir)/semaphore.o
+all: $(build_dir)/tasks.o $(build_dir)/semaphore.o $(build_dir)/mutex.o

@@ -32,7 +32,8 @@ KERNEL_LINK_OBJECTS := \
 	$(build_dir)/timer_irq.o \
 	$(build_dir)/stdin.o \
 	$(build_dir)/semaphore.o \
-	$(build_dir)/tasks.o
+	$(build_dir)/tasks.o \
+	$(build_dir)/mutex.o
 
 .PHONY: all clean utils string screen memory pic pit idt gdt tasks stdin
 
@@ -81,7 +82,7 @@ pit:
 
 $(build_dir)/GDT.o: gdt
 
-$(build_dir)/tasks.o $(build_dir)/semaphore.o: tasks
+$(build_dir)/tasks.o $(build_dir)/semaphore.o $(build_dir)/mutex.o: tasks
 
 tasks:
 	$(MAKE) -C $(TASKS_DIR) all
