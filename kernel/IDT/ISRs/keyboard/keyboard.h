@@ -6,8 +6,8 @@
 #define PIC1_CMD 0x20
 
 
-extern uint8_t scancode_buffer[1000];
-extern char char_buffer[500];
+extern uint8_t scancode_buffer[100000];
+extern char char_buffer[50000];
 extern uint32_t current_scancode_in;
 extern uint32_t current_scancode_out;
 extern uint32_t current_char_in;

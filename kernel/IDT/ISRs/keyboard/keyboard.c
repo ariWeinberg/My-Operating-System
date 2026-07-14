@@ -12,8 +12,8 @@
 #define PIC1_CMD 0x20
 
 
-uint8_t scancode_buffer[1000];
-char char_buffer[500];
+uint8_t scancode_buffer[100000];
+char char_buffer[50000];
 uint32_t current_scancode_in = 0;
 uint32_t current_scancode_out = 0;
 uint32_t current_char_in = 0;
@@ -77,7 +77,7 @@ void handle_scancode(uint8_t scancode)
 
 // simple C handler for keyboard scan codes
 void keyboard_handler_c(uint8_t scancode) {
-    if (current_scancode_in < 999)
+    if (current_scancode_in < 100000)
     scancode_buffer[current_scancode_in++] = scancode;
         handle_scancode(scancode);
 
