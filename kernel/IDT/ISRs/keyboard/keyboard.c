@@ -6,20 +6,16 @@
 #include "./scancode_map.h"
 #include "./shifted_scancode_map.h"
 #include "../../../PIC/PIC.h"
+#include "../../../STD/buffers/ring_buffer/ring_buffer.h"
 
 
 #define KBD_PORT 0x60
 #define PIC1_CMD 0x20
 
-
-uint8_t scancode_buffer[100000];
-char char_buffer[50000];
-uint32_t current_scancode_in = 0;
-uint32_t current_scancode_out = 0;
-uint32_t current_char_in = 0;
-uint32_t current_char_out = 0;
-
 bool is_l_shifted = false;
+
+RingBuffer character_buffer;
+RingBuffer scancode_buffer;
 
 char scancode_to_char(uint8_t scancode)
 {
@@ -56,31 +52,25 @@ char scancode_to_char(uint8_t scancode)
     return '?';
 }
 
-void key_map_task()
+void handle_scancode(void)
 {
-    while (1)
+    uint8_t scancode;
+    if(ring_buffer_pop(&scancode_buffer, &scancode))
     {
-        handle_scancode(' ');
+        char character = scancode_to_char(scancode);
+        ring_buffer_push(&character_buffer, character);
     }
-}
-
-void handle_scancode(uint8_t scancode)
-{
-    char buf[5];
-    // print_string("in KB handller\n");
-    char_buffer[current_char_in++] = scancode_to_char(scancode);
-    // print_string(uint8_to_hex_prefixed(scancode, buf));
-    // put_char('\n',0x0F);
-                // put_char(char_buffer[current_char_out++], 0x0F);
-    // put_char('\n',0x0F);
 }
 
 // simple C handler for keyboard scan codes
 void keyboard_handler_c(uint8_t scancode) {
-    if (current_scancode_in < 100000)
-    scancode_buffer[current_scancode_in++] = scancode;
-        handle_scancode(scancode);
-
+    if (!ring_buffer_is_full(&scancode_buffer))
+    {
+        if (ring_buffer_push(&scancode_buffer, scancode))
+        {
+            handle_scancode();
+        }
+    }
 }
 
 // assembly ISR wrapper
@@ -108,10 +98,22 @@ __attribute__((naked)) void keyboard_isr(void)
     );
 }
 
-
-
-void init_keyboard_irq() {
+void init_keyboard_irq(void) {
+    ring_buffer_init(&character_buffer, 10000);
+    ring_buffer_init(&scancode_buffer, 1024);
     // keyboard is IRQ1 -> IDT entry 0x21 after PIC remap
     idt_set_entry(0x21, (uint32_t)keyboard_isr, 0x08, 0x8E, 0);
     irq_clear_mask(1);
+}
+
+bool keyboard_pop_char(char *out)
+{
+    if (out == NULL)
+        return false;
+
+    interrupts_disable();
+    bool result = ring_buffer_pop(&character_buffer, (uint8_t *)out);
+    interrupts_enable();
+
+    return result;
 }

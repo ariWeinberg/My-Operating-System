@@ -117,9 +117,9 @@ void stdin_loop(void)
 {
     while(1)
     {
-        if(current_char_out < current_char_in)
+        char c;
+        if(keyboard_pop_char(&c))
         {
-            const char c = char_buffer[current_char_out++];
             put_char(c, 0x0F);
             stdin_insert(c);
         }

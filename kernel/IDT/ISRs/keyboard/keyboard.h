@@ -1,19 +1,16 @@
+#ifndef KEYBOARD
+#define KEYBOARD
 #include "../../IDT.h"
 #include "../../../STD/int.h"
+#include "../../../STD/bool.h"
 #include "../../../UTILS/asm_utils.h" // inb/outb
 
 #define KBD_PORT 0x60
 #define PIC1_CMD 0x20
 
+void handle_scancode(void);
+void init_keyboard_irq(void);
 
-extern uint8_t scancode_buffer[100000];
-extern char char_buffer[50000];
-extern uint32_t current_scancode_in;
-extern uint32_t current_scancode_out;
-extern uint32_t current_char_in;
-extern uint32_t current_char_out;
+bool keyboard_pop_char(char *out);
 
-
-void handle_scancode(uint8_t scancode);
-void init_keyboard_irq();
-void key_map_task();
+#endif
