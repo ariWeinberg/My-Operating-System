@@ -34,6 +34,7 @@ static void k_init(void)
 {
     gdt_init();
     kernel_setup_interrupts();
+    stdin_init();
 }
 
 static void k_main(void)
@@ -47,11 +48,12 @@ static void k_main(void)
 
 static void k_loop(void)
 {
-    while(1)
+    while(false)
     {
         // const char c = peek_char();
         // put_char(c, 0x0F);
     }
+    idle_task();
 }
 
 static void k_panic(void)

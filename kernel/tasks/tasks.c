@@ -3,7 +3,6 @@
 #include "../STD/defs.h"
 #include "../STD/bool.h"
 #include "../IDT/ISRs/timer/timer.h"
-
 Task t_null = {0};
 tasks_settings settings;
 
@@ -12,8 +11,6 @@ uint16_t current_index = 0;
 uint16_t task_count = 0;
 uint16_t task_slots = 0;
 uint32_t next_task_id = 1;
-
-uint32_t critical = 0;
 
 bool is_initialized = false;
 
@@ -47,18 +44,28 @@ void context_switch(Task* next_task) {
         "movl running_task, %eax\n\t"
         "movl %esp, (%eax)\n\t"   // 2. Save current ESP into running_task->esp
 
-        "movl 36(%esp), %eax\n\t" // 3. Get 'next_task' argument (offset 36 because of pushal + return address)
-        "movl %eax, running_task\n\t" // 4. Update running_task pointer
-        "movl (%eax), %esp\n\t"   // 5. Load the NEW task's ESP
+        "movl 36(%esp), %eax\n\t"
+        "movl %eax, running_task\n\t"
+        "cmpl $0, 32(%eax)\n\t"
+        "je .Lswitch_disabled\n\t"
 
-        "popal\n\t"               // 6. Restore new task's state
-        "ret\n\t"                 // 7. Jump to new task's saved EIP
+        "movl (%eax), %esp\n\t"
+        "popal\n\t"
+        "sti\n\t"
+        "ret\n\t"
+
+        ".Lswitch_disabled:\n\t"
+        "movl (%eax), %esp\n\t"
+        "popal\n\t"
+        "cli\n\t"
+        "ret\n\t"
     );
 }
 
 Task *choose_next_task(void)
 {
-    if (!is_initialized || task_list == NULL || task_count < 2 || critical > 0)
+    if (!is_initialized || task_list == NULL || task_count < 2 ||
+        (running_task != NULL && running_task->critical > 0))
     {
         return NULL;
     }
@@ -140,6 +147,7 @@ Task k_create_task(void (*func)())
     t.state = TASK_READY;
     t.id = next_task_id++;
     t.wake_tick = 0;
+    t.critical = 0;
 
     return t;
 }
@@ -178,20 +186,20 @@ void k_create_and_register_task(void (*func)())
 
 void enter_critical(void)
 {
-    if (!critical)
+    if (!running_task->critical)
     {
         interrupts_disable();
     }
-    critical++;
+    running_task->critical++;
 }
 
 void exit_critical(void)
 {
-    if (critical > 0)
+    if (running_task->critical > 0)
     {
-        critical--;
+        running_task->critical--;
     }
-    if (!critical)
+    if (!running_task->critical)
     {
         interrupts_enable();
     }
@@ -290,4 +298,92 @@ void scheduler_tick(void)
             task->state = TASK_READY;
         }
     }
+}
+
+
+void idle_task(void)
+{
+    while (true)
+    {
+        asm volatile ("sti; hlt");
+    }
+}
+
+void scheduler_wait(WaitQueue *queue)
+{
+    if (queue == NULL || running_task == NULL)
+        return;
+
+    interrupts_disable();
+
+    Task *task = running_task;
+    task->state = TASK_BLOCKED;
+    task->wait_next = NULL;
+    task->waiting_on = queue;
+
+    if (queue->tail != NULL)
+        queue->tail->wait_next = task;
+    else
+        queue->head = task;
+
+    queue->tail = task;
+
+    Task *next = choose_next_task();
+
+    // interrupts_enable();
+
+    if (next != NULL)
+        context_switch(next);
+}
+
+void scheduler_wake_one(WaitQueue *queue)
+{
+    if (queue == NULL)
+        return;
+
+    interrupts_disable();
+
+    Task *task = queue->head;
+    if (task != NULL)
+    {
+        queue->head = task->wait_next;
+
+        if (queue->head == NULL)
+            queue->tail = NULL;
+
+        task->wait_next = NULL;
+        task->waiting_on = NULL;
+        task->state = TASK_READY;
+    }
+
+    interrupts_enable();
+}
+
+void scheduler_wake_all(WaitQueue *queue)
+{
+    if (queue == NULL)
+        return;
+
+    interrupts_disable();
+
+    while (queue->head != NULL)
+    {
+        Task *task = queue->head;
+        queue->head = task->wait_next;
+
+        if (queue->head == NULL)
+            queue->tail = NULL;
+
+        task->wait_next = NULL;
+        task->waiting_on = NULL;
+        task->state = TASK_READY;
+    }
+
+    interrupts_enable();
+}
+
+void wait_queue_init(WaitQueue *queue)
+{
+    queue->head = NULL;
+    queue->tail = NULL;
 }

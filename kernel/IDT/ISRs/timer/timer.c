@@ -55,7 +55,8 @@ void timer_isr(void)
 
         ".Ltimer_scheduler_resume:\n\t"
         "cli\n\t"
-        "cmpl $0, critical\n\t"
+        "movl running_task, %%eax\n\t"
+        "cmpl $0, 32(%%eax)\n\t"
         "jg .Ltimer_resume_original\n\t"
         "cmpl $2, task_count\n\t"
         "jl .Ltimer_resume_original\n\t"

@@ -2,8 +2,9 @@
 #define TASKS
 
 #include "../STD/int.h"
-#include "task.h"
 #include "../STD/defs.h"
+#include "task.h"
+
 
 __attribute__((naked)) void context_switch(Task* next_task);
 void task_starter(void (*func)());
@@ -22,5 +23,14 @@ void scheduler_block(uint32_t task_id);
 void scheduler_unblock(uint32_t task_id);
 void scheduler_exit();
 void scheduler_tick(void);
+
+
+
+void wait_queue_init(WaitQueue *queue);
+void scheduler_wait(WaitQueue *queue);
+void scheduler_wake_one(WaitQueue *queue);
+void scheduler_wake_all(WaitQueue *queue);
+
+void idle_task(void);
 
 #endif

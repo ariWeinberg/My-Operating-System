@@ -4,6 +4,8 @@
 #include "../STD/int.h"
 #include "../MEMORY_MANAGMENT/memory_managment.h"
 
+struct wait_queue;
+
 typedef enum {
     TASK_UNUSED,
     TASK_READY,
@@ -20,7 +22,17 @@ typedef struct task {
     uint32_t id;
     task_state_t state;
     uint32_t wake_tick;
+
+    struct task *wait_next;
+    struct wait_queue *waiting_on;
+
+    uint16_t critical;
 } Task;
+
+typedef struct wait_queue {
+    Task *head;
+    Task *tail;
+} WaitQueue;
 
 typedef struct tasks_settings
 {
