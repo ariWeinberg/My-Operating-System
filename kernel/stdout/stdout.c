@@ -16,6 +16,8 @@ uint32_t stream_end = 0;
 uint32_t view_start = 0;
 
 bool stdout_is_initialized = false;
+bool stdout_follow_output = true;
+
 
 void stdout_init(void)
 {
@@ -31,6 +33,7 @@ void stdout_init(void)
     {
         stream_end = 0;
         view_start = 0;
+        stdout_follow_output = true;
         stdout_is_initialized = true;
     }
 }
@@ -45,6 +48,8 @@ void stdout_write(char c)
 
     if (stream_end < capacity)
         buffer[stream_end++] = c;
+
+    stdout_follow_output = true;
 
     exit_critical();
 }
@@ -71,12 +76,23 @@ if (!stdout_is_initialized)
       {
           while (view_start < stream_end && buffer[view_start++] != '\n')
               ;
+
+          uint8_t remaining_rows = 0;
+          for (uint32_t i = view_start; i < stream_end; i++)
+          {
+              if (buffer[i] == '\n')
+                  remaining_rows++;
+          }
+
+          stdout_follow_output = remaining_rows <= screen_row_count;
       }
       else if (direction == UP && view_start > 0)
       {
           view_start--;
           while (view_start > 0 && buffer[view_start - 1] != '\n')
               view_start--;
+
+          stdout_follow_output = false;
       }
 
       stdout_flush();
@@ -108,7 +124,8 @@ void stdout_flush(void)
             next++;
         }
 
-        if (next >= stream_end || visible_rows < screen_row_count)
+        if (!stdout_follow_output ||
+            next >= stream_end || visible_rows < screen_row_count)
             break;
 
         while (view_start < stream_end && buffer[view_start++] != '\n')
