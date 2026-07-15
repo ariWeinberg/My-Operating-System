@@ -95,15 +95,24 @@ void stdout_flush(void)
         return;
 
     enter_critical();
-    clear_screen();
-
-    uint8_t visible_rows = 0;
-    for (uint32_t i = view_start;
-         i < stream_end && visible_rows < screen_row_count;
-         i++)
+    while (true)
     {
-        if (put_char(buffer[i], 0x0F))
-            visible_rows++;
+        clear_screen();
+
+        uint8_t visible_rows = 0;
+        uint32_t next = view_start;
+        while (next < stream_end && visible_rows < screen_row_count)
+        {
+            if (put_char(buffer[next], 0x0F))
+                visible_rows++;
+            next++;
+        }
+
+        if (next >= stream_end || visible_rows < screen_row_count)
+            break;
+
+        while (view_start < stream_end && buffer[view_start++] != '\n')
+            ;
     }
 
     exit_critical();
