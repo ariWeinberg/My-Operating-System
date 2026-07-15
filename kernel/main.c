@@ -11,8 +11,9 @@
 #include "./IDT/ISRs/timer/timer.h"
 #include "./tasks/tasks.h"
 #include "kernel.h"
-#include "stdin/stdin.h"
 #include "STRING/string.h"
+#include "stdin/stdin.h"
+#include "stdout/stdout.h"
 
 
 void task_a(void);
@@ -35,12 +36,13 @@ static void k_init(void)
     gdt_init();
     kernel_setup_interrupts();
     stdin_init();
+    stdout_init();
 }
 
 static void k_main(void)
 {
     clear_screen();
-    print_string("hello from kernel!\n");
+    stdout_write_line("hello from kernel!");
     init_tasks();
     k_setup_tasks();
     k_loop();
@@ -89,10 +91,11 @@ static void kernel_setup_interrupts(void) {
 static void k_setup_tasks(void)
 {
     k_create_and_register_task(&stdin_loop);
-    k_create_and_register_task(&echo_task);
-    k_create_and_register_task(&task_a);
-    k_create_and_register_task(&task_b);
-    k_create_and_register_task(&task_c);
+    // k_create_and_register_task(&echo_task);
+    // k_create_and_register_task(&task_a);
+    // k_create_and_register_task(&task_b);
+    // k_create_and_register_task(&task_c);
+    k_create_and_register_task(&stdout_loop);
 }
 
 void k_sleep(uint16_t ms)
@@ -106,13 +109,13 @@ void k_sleep(uint16_t ms)
 
 void echo_task(void)
 {
-    print_string("enter lines and i will echo them...\n\n");
+    stdout_write_line("enter lines and i will echo them...");
     while (1)
     {
         const char *str = read_line();
         if (str == NULL)
         {
-            print_string("oopsi... an error occourd.\n");
+            stdout_write_line("oopsi... an error occourd.");
             k_panic(); // later add error messages...
             return;
         }
@@ -120,10 +123,10 @@ void echo_task(void)
         {
             continue;
         }
-        print_string(str);
+        stdout_write_line(str);
     }
     
 }
-void task_a(void) {while(1){print_string("A"); k_sleep(5000);}}
-void task_b(void) {while(1){print_string("B"); k_sleep(20000);}}
-void task_c(void) {while(1){print_string("C"); k_sleep(1000);}}
+void task_a(void) {while(1){stdout_write('A'); k_sleep(5000);}}
+void task_b(void) {while(1){stdout_write('B'); k_sleep(20000);}}
+void task_c(void) {while(1){stdout_write('C'); k_sleep(1000);}}

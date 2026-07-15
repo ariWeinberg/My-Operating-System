@@ -6,6 +6,7 @@
 #include "../tasks/tasks.h"
 #include "SCREEN_DRIVER/screen_driver.h"
 #include "../tasks/task.h"
+#include "../stdout/stdout.h"
 
 #define STDIN_SIZE (1024u * 1024u)
 
@@ -120,7 +121,8 @@ void stdin_loop(void)
         char c;
         if(keyboard_pop_char(&c))
         {
-            put_char(c, 0x0F);
+            // put_char(c, 0x0F);
+            stdout_write(c);
             stdin_insert(c);
         }
         else

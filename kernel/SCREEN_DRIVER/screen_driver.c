@@ -34,34 +34,36 @@ void print_string(const char *s)
     }
 }
 
-void put_char(char c, uint8_t color)
+bool put_char(char c, uint8_t color)
 {
     uint8_t *cur = (uint8_t*)(video_memory_base + ((cursor_y * columns + cursor_x) * 2));
     switch (c)
     {
     case 0x0:
-        return;
+        return false;
     case 10:
         cursor_x = 0;
         cursor_y = (cursor_y + 1) % rows;
-        return;
+        return true;
     case 13:
         cursor_x = 0;
-        return;
+        return false;
     case 8:
-        cur[-2] = ' ';
-        cur[-1] = color;
-        if (cursor_x == 0 && cursor_y > 0)
+        if (cursor_x == 0 && cursor_y == 0)
+            return false;
+
+        if (cursor_x == 0)
         {
             cursor_y -= 1;
             cursor_x = columns - 1;
         }
         else
-        {
-            if (cursor_x > 0)
             cursor_x -= 1;
-        }
-        return;
+
+        cur = (uint8_t*)(video_memory_base + ((cursor_y * columns + cursor_x) * 2));
+        cur[0] = ' ';
+        cur[1] = color;
+        return false;
     case 9: // Horizontal Tab (\t)
         // Calculate how many spaces to skip to reach the next multiple of 8
         uint8_t spaces = 8 - (cursor_x % 8);
@@ -75,7 +77,7 @@ void put_char(char c, uint8_t color)
             cursor_x = 0; // Or cursor_x % columns if you want it to wrap naturally
             cursor_y = (cursor_y + 1) % rows;
         }
-        return;
+        return cursor_x == 0;
 
     default:
         break;
@@ -87,5 +89,8 @@ void put_char(char c, uint8_t color)
     if (cursor_x == 0)
     {
         cursor_y = (cursor_y + 1) % rows;
+        return true;
     }
+
+    return false;
 }

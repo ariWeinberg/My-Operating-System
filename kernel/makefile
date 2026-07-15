@@ -12,6 +12,7 @@ GDT_DIR := $(kernel_dir)/GDT
 TASKS_DIR := $(kernel_dir)/tasks
 STDIN_DIR := $(kernel_dir)/stdin
 BUFFERS_DIR := $(kernel_dir)/STD/buffers
+STDOUT_DIR:= $(kernel_dir)/stdout
 
 GCC_FLAGS := -m32 -std=gnu17 -g -ffreestanding -fno-pic -fno-pie -nostdlib -nostartfiles -nodefaultlibs
 GCC_CMD := gcc $(GCC_FLAGS)
@@ -35,9 +36,10 @@ KERNEL_LINK_OBJECTS := \
 	$(build_dir)/semaphore.o \
 	$(build_dir)/tasks.o \
 	$(build_dir)/mutex.o \
-	$(build_dir)/ring_buffer.o
+	$(build_dir)/ring_buffer.o \
+	$(build_dir)/stdout.o
 
-.PHONY: all clean utils string screen memory pic pit idt gdt tasks stdin buffers
+.PHONY: all clean utils string screen memory pic pit idt gdt tasks stdin buffers stdout
 
 all: $(build_dir)/kernel.bin
 
@@ -101,6 +103,11 @@ stdin:
 
 gdt:
 	$(MAKE) -C $(GDT_DIR) all
+
+$(build_dir)/stdout.o: stdout
+
+stdout:
+	$(MAKE) -C $(STDOUT_DIR) all
 
 $(build_dir)/kernel.elf: $(KERNEL_LINK_OBJECTS)
 	ld -m elf_i386 -T linker.ld $^ -o $@

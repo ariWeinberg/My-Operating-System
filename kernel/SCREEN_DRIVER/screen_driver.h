@@ -1,8 +1,9 @@
 #ifndef SCREEN_DRIVER_H
 #define SCREEN_DRIVER_H
 #include "../STD/int.h"
+#include "../STD/bool.h"
 
-void put_char(char c, uint8_t color);
+bool put_char(char c, uint8_t color);
 void print_string(const char *s);
 void clear_screen();
 #endif
