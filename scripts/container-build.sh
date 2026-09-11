@@ -4,6 +4,7 @@ set -eu
 readonly source_dir=/src
 readonly work_dir=/tmp/arios-source
 readonly epoch="${SOURCE_DATE_EPOCH:-1686528000}"
+readonly fixed_time="2023-06-12 00:00:00"
 
 if [ ! -f "${source_dir}/makefile" ]; then
     echo "error: mount the repository at /src" >&2
@@ -20,8 +21,8 @@ rm -rf "${work_dir}/.git" "${work_dir}/build" "${work_dir}/out"     "${work_dir}
 find "${work_dir}" -exec touch -h -d "@${epoch}" {} +
 
 cd "${work_dir}"
-faketime -f "@${epoch}" make clean
-faketime -f "@${epoch}" make
+faketime "${fixed_time}" make clean
+faketime "${fixed_time}" make
 
 test "$(stat -c %s out/disk.img)" -eq 16777216
 sha256sum out/disk.img > out/SHA256SUMS
