@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AriOS AI-Native OS Architecture</title>
+  <style>
+    :root {
+      --bg: #071018;
+      --panel: #0d1a25;
+      --panel-2: #122536;
+      --line: #29465d;
+      --text: #eaf4fb;
+      --muted: #9eb4c4;
+      --cyan: #5de4e7;
+      --blue: #6ca8ff;
+      --violet: #b694ff;
+      --green: #70e5a1;
+      --amber: #ffc86b;
+      --red: #ff7e87;
+      --shadow: 0 18px 55px rgba(0, 0, 0, .32);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 18% -5%, rgba(93, 228, 231, .14), transparent 33rem),
+        radial-gradient(circle at 92% 8%, rgba(182, 148, 255, .12), transparent 28rem),
+        var(--bg);
+      font: 15px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main { width: min(1500px, calc(100% - 36px)); margin: 0 auto; padding: 42px 0 70px; }
+    header { display: grid; grid-template-columns: 1fr auto; gap: 28px; align-items: end; margin-bottom: 26px; }
+    .eyebrow { color: var(--cyan); text-transform: uppercase; letter-spacing: .16em; font-size: 12px; font-weight: 800; }
+    h1 { margin: 8px 0 8px; max-width: 900px; font-size: clamp(30px, 4.5vw, 58px); line-height: 1.02; letter-spacing: -.035em; }
+    header p { max-width: 900px; margin: 0; color: var(--muted); font-size: 17px; }
+    .stamp { color: var(--muted); text-align: right; white-space: nowrap; }
+    .stamp strong { display: block; color: var(--text); font-size: 17px; }
+    .summary {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 24px 0;
+    }
+    .metric, .card, .phase, .node {
+      background: linear-gradient(180deg, rgba(18, 37, 54, .92), rgba(13, 26, 37, .96));
+      border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow);
+    }
+    .metric { padding: 17px; }
+    .metric b { display: block; color: var(--cyan); font-size: 25px; }
+    .metric span { color: var(--muted); }
+    h2 { margin: 38px 0 14px; font-size: 22px; letter-spacing: -.01em; }
+    h3 { margin: 0 0 7px; font-size: 15px; }
+    .architecture { display: grid; gap: 12px; }
+    .layer {
+      display: grid; grid-template-columns: 180px 1fr; gap: 14px; align-items: stretch;
+    }
+    .layer-label {
+      display: flex; align-items: center; justify-content: center; text-align: center;
+      padding: 14px; border: 1px solid var(--line); border-radius: 14px;
+      color: var(--muted); font-weight: 800; text-transform: uppercase; letter-spacing: .08em; font-size: 11px;
+    }
+    .layer-content { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .card { position: relative; padding: 15px; min-height: 96px; }
+    .card p { margin: 0; color: var(--muted); font-size: 13px; }
+    .card::after {
+      content: ""; position: absolute; left: 50%; bottom: -13px; width: 1px; height: 12px; background: var(--line);
+    }
+    .layer:last-child .card::after { display: none; }
+    .kernel .layer-label { border-color: rgba(108, 168, 255, .58); color: var(--blue); }
+    .runtime .layer-label { border-color: rgba(255, 200, 107, .58); color: var(--amber); }
+    .python .layer-label { border-color: rgba(112, 229, 161, .58); color: var(--green); }
+    .generated .layer-label { border-color: rgba(255, 126, 135, .58); color: var(--red); }
+    .cluster .layer-label { border-color: rgba(182, 148, 255, .58); color: var(--violet); }
+    .wide { grid-column: span 2; }
+    .boundary {
+      margin: 2px 0; padding: 9px 14px; border: 1px dashed rgba(93, 228, 231, .45); border-radius: 10px;
+      color: var(--cyan); text-align: center; font-weight: 700; font-size: 12px; letter-spacing: .06em;
+      width: 100%;
+    }
+    .flow { display: flex; gap: 8px; align-items: center; }
+    .phase { flex: 1 1 0; min-width: 0; padding: 13px; min-height: 118px; border-top: 3px solid var(--blue); }
+    .phase b { display: block; color: var(--blue); margin-bottom: 3px; }
+    .phase small { color: var(--muted); }
+    .arrow { text-align: center; color: var(--cyan); font-size: 21px; }
+    .effort { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .bars { padding: 18px; }
+    .bar-row { display: grid; grid-template-columns: 210px 1fr 72px; gap: 10px; align-items: center; margin: 9px 0; }
+    .bar-row span:first-child { color: var(--muted); font-size: 13px; }
+    .track { height: 9px; background: #071018; border-radius: 999px; overflow: hidden; border: 1px solid var(--line); }
+    .fill { height: 100%; background: linear-gradient(90deg, var(--blue), var(--violet)); border-radius: inherit; }
+    .hours { text-align: right; font-variant-numeric: tabular-nums; color: var(--text); font-size: 13px; }
+    .guardrails { padding: 18px; }
+    .guardrails ul { margin: 7px 0 0; padding-left: 19px; color: var(--muted); }
+    .guardrails li { margin: 8px 0; }
+    .nodes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .node { padding: 17px; border-top: 3px solid var(--violet); }
+    .node ul { color: var(--muted); padding-left: 18px; margin-bottom: 0; }
+    .legend { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 13px; color: var(--muted); font-size: 12px; }
+    .dot { width: 9px; height: 9px; display: inline-block; border-radius: 50%; margin-right: 6px; }
+    footer { margin-top: 34px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 18px; }
+    @media (max-width: 1050px) {
+      .summary { grid-template-columns: repeat(2, 1fr); }
+      .layer { grid-template-columns: 1fr; }
+      .layer-content { grid-template-columns: repeat(2, 1fr); }
+      .flow { flex-wrap: wrap; }
+      .phase { flex: 1 1 30%; }
+      .arrow { display: none; }
+      .effort, .nodes { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 650px) {
+      main { width: min(100% - 20px, 1500px); padding-top: 24px; }
+      header { grid-template-columns: 1fr; }
+      .stamp { text-align: left; }
+      .summary, .layer-content { grid-template-columns: 1fr; }
+      .phase { flex-basis: 100%; }
+      .wide { grid-column: span 1; }
+      .bar-row { grid-template-columns: 125px 1fr 58px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <div class="eyebrow">Custom-kernel product path</div>
+      <h1>Production AI-Native OS Architecture</h1>
+      <p>From the current i386 BIOS learning kernel to a secure x86_64 UEFI operating system whose owned services, orchestration, task logic, and generated programs are Python.</p>
+    </div>
+    <div class="stamp"><strong>Proposed v1.0</strong>Audit: a781297<br>28 Aug 2026</div>
+  </header>
+
+  <section class="summary" aria-label="Program summary">
+    <div class="metric"><b>37,350 h</b><span>task-level human effort</span></div>
+    <div class="metric"><b>15 phases</b><span>each ends bootable</span></div>
+    <div class="metric"><b>3+ nodes</b><span>production cluster floor</span></div>
+    <div class="metric"><b>4-6 years</b><span>with 6-8 senior engineers</span></div>
+  </section>
+
+  <h2>Layered system</h2>
+  <section class="architecture" aria-label="Architecture layers">
+    <div class="layer kernel">
+      <div class="layer-label">Trusted kernel<br>Ring 0</div>
+      <div class="layer-content">
+        <article class="card"><h3>UEFI + Boot</h3><p>Signed ELF64 image, initramfs, ACPI, GOP, A/B rollback.</p></article>
+        <article class="card"><h3>Kernel Core</h3><p>Virtual memory, SMP, scheduler, traps, clocks, IPC.</p></article>
+        <article class="card"><h3>I/O</h3><p>VFS, journaled filesystem, block layer, sockets, TCP/IP.</p></article>
+        <article class="card"><h3>Protection</h3><p>Ring 3, NX/W^X, capabilities, sandbox primitives, audit.</p></article>
+      </div>
+    </div>
+    <div class="boundary">VERSIONED SYSCALL ABI · HANDLES · USER COPY · RESOURCE LIMITS</div>
+    <div class="layer runtime">
+      <div class="layer-label">Native runtime<br>narrow exception</div>
+      <div class="layer-content">
+        <article class="card"><h3>libc / ABI shim</h3><p>Threads, files, sockets, signals, time, dynamic loading.</p></article>
+        <article class="card"><h3>CPython</h3><p>Frozen bootstrap, stdlib, asyncio, SQLite, wheels and venvs.</p></article>
+        <article class="card"><h3>Crypto + TLS</h3><p>Audited library, entropy, X.509, mTLS and key handles.</p></article>
+        <article class="card"><h3>Local inference</h3><p>Quantized model runtime exposed through a Python binding.</p></article>
+      </div>
+    </div>
+    <div class="layer python">
+      <div class="layer-label">Trusted AriOS<br>Python control plane</div>
+      <div class="layer-content">
+        <article class="card"><h3>Task Manager</h3><p>Lifecycle, DAGs, retries, budgets, approvals, artifacts.</p></article>
+        <article class="card"><h3>Model Router</h3><p>Local-first routing; remote GPT-like provider under policy.</p></article>
+        <article class="card"><h3>Node Agent</h3><p>Enrollment, health, resources, leases, updates and drain.</p></article>
+        <article class="card"><h3>Operator Surfaces</h3><p>Shared API powering CLI, TUI and simple local web UI.</p></article>
+      </div>
+    </div>
+    <div class="layer generated">
+      <div class="layer-label">Untrusted generated<br>Python bundles</div>
+      <div class="layer-content">
+        <article class="card wide"><h3>Build · test · policy · sign · promote</h3><p>Source, manifest, dependency lock, tests, requested capabilities, model provenance and immutable content hash.</p></article>
+        <article class="card wide"><h3>Default-deny executor</h3><p>Per-run process/address space with explicit CPU, memory, time, filesystem, network, secret and device grants.</p></article>
+      </div>
+    </div>
+    <div class="layer cluster">
+      <div class="layer-label">Authenticated<br>cluster fabric</div>
+      <div class="layer-content">
+        <article class="card"><h3>Compute</h3><p>Placement, leases, backpressure, checkpoints, map/reduce.</p></article>
+        <article class="card"><h3>Durable Storage</h3><p>Content chunks, replicas, repair, scrub and encryption.</p></article>
+        <article class="card"><h3>Consensus Metadata</h3><p>Raft log for catalog, membership and mutable pointers.</p></article>
+        <article class="card"><h3>Observability</h3><p>Replayable events, logs, metrics, traces and crash bundles.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <h2>Critical path</h2>
+  <section class="flow" aria-label="Critical path">
+    <article class="phase"><b>P0-P1</b><strong>VM delivery + trusted boot</strong><br><small>CI-built IMG/VDI/VMDK baseline, then UEFI/x86_64.</small></article>
+    <div class="arrow">→</div>
+    <article class="phase"><b>P2-P4</b><strong>Kernel platform</strong><br><small>VM, SMP, processes, syscalls and IPC.</small></article>
+    <div class="arrow">→</div>
+    <article class="phase"><b>P5-P8</b><strong>Safe I/O</strong><br><small>Storage, drivers, networking and security.</small></article>
+    <div class="arrow">→</div>
+    <article class="phase"><b>P9-P10</b><strong>Python boots</strong><br><small>Runtime ABI, libc layer and CPython.</small></article>
+    <div class="arrow">→</div>
+    <article class="phase"><b>P11</b><strong>AI single node</strong><br><small>Tasks, models and generated-code sandbox.</small></article>
+    <div class="arrow">→</div>
+    <article class="phase"><b>P12-P13</b><strong>Cluster</strong><br><small>Distributed compute and durable storage.</small></article>
+    <div class="arrow">→</div>
+    <article class="phase"><b>P14</b><strong>v1.0</strong><br><small>Updates, qualification, audits and operations.</small></article>
+  </section>
+
+  <h2>Cluster reference topology</h2>
+  <section class="nodes" aria-label="Reference cluster">
+    <article class="node"><h3>Node A · coordinator + worker</h3><ul><li>Task and model-router API</li><li>Compute scheduler leader</li><li>Metadata consensus voter</li><li>Artifact replica</li></ul></article>
+    <article class="node"><h3>Node B · worker + storage</h3><ul><li>Generated-code executor</li><li>Local model replica</li><li>Metadata consensus voter</li><li>Artifact replica</li></ul></article>
+    <article class="node"><h3>Node C · worker + storage</h3><ul><li>Batch/DAG execution</li><li>Repair and scrub worker</li><li>Metadata consensus voter</li><li>Artifact replica</li></ul></article>
+  </section>
+  <div class="legend">
+    <span><i class="dot" style="background:var(--green)"></i>AriOS-owned services are Python</span>
+    <span><i class="dot" style="background:var(--amber)"></i>Native runtime dependencies are narrow and audited</span>
+    <span><i class="dot" style="background:var(--red)"></i>Generated code is always untrusted</span>
+  </div>
+
+  <h2>Effort distribution and non-negotiable guardrails</h2>
+  <section class="effort">
+    <article class="card bars">
+      <div class="bar-row"><span>Kernel foundation P0-P4</span><div class="track"><div class="fill" style="width:52%"></div></div><div class="hours">7,328 h</div></div>
+      <div class="bar-row"><span>I/O + security P5-P8</span><div class="track"><div class="fill" style="width:76%"></div></div><div class="hours">10,590 h</div></div>
+      <div class="bar-row"><span>Runtime + Python P9-P10</span><div class="track"><div class="fill" style="width:42%"></div></div><div class="hours">5,800 h</div></div>
+      <div class="bar-row"><span>AI + cluster P11-P13</span><div class="track"><div class="fill" style="width:78%"></div></div><div class="hours">10,980 h</div></div>
+      <div class="bar-row"><span>Production P14</span><div class="track"><div class="fill" style="width:20%"></div></div><div class="hours">2,700 h</div></div>
+    </article>
+    <article class="card guardrails">
+      <h3>Guardrails</h3>
+      <ul>
+        <li>Never execute model-generated code in Ring 0 or a privileged native service.</li>
+        <li>Every accepted change preserves a CI-built, boot-tested VM artifact.</li>
+        <li>Every phase ends with a bootable, regression-tested release tag.</li>
+        <li>Security starts with paging and privilege separation; it is not a final hardening phase.</li>
+        <li>Distributed compute does not imply efficient cross-node tensor parallelism.</li>
+        <li>Production claims apply only to the published hardware and failure matrix.</li>
+      </ul>
+    </article>
+  </section>
+
+  <footer>Companion to <strong>AI_NATIVE_OS_MASTER_PLAN.md</strong>. This diagram is intentionally standalone and has no external scripts, fonts, or network dependencies.</footer>
+</main>
+</body>
+</html>
