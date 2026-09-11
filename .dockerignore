@@ -1,0 +1,8 @@
+.git
+.cursor
+.vscode
+build
+out
+kernel/build
+qemu.log
+a.out
