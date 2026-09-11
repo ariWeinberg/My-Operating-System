@@ -5,7 +5,7 @@ build_dir := build
 out_dir := out
 etc_dir := etc
 
-.PHONY: all run_disk debug_disk clean FORCE
+.PHONY: all run_disk debug_disk container-build verify-reproducible clean FORCE
 
 all: $(out_dir)/disk.img
 
@@ -28,7 +28,7 @@ $(kernel_dir)/build/kernel.bin: FORCE
 
 $(out_dir)/disk.img: $(build_dir)/bootloader.o $(build_dir)/stage2.bin $(kernel_dir)/build/kernel.bin | $(out_dir)
 	dd if=/dev/zero of=$@ bs=512 count=32768
-	mkfs.fat -F 16 -f 2 -R 40 $@
+	mkfs.fat -F 16 -f 2 -R 40 -i 4152494f $@
 	dd if=$(build_dir)/bootloader.o of=$@ conv=notrunc bs=1 seek=61 skip=61
 	dd if=$(build_dir)/stage2.bin of=$@ conv=notrunc bs=512 seek=1
 	mmd -i $@ ::NEWDIR1
@@ -42,6 +42,19 @@ $(out_dir)/disk.img: $(build_dir)/bootloader.o $(build_dir)/stage2.bin $(kernel_
 	mmd -i $@ ::OS
 	mcopy -i $@ $(kernel_dir)/build/kernel.bin ::/OS/KERNEL
 
+container-build:
+	sh scripts/build.sh
+
+verify-reproducible:
+	@set -eu; \
+	tmp=$$(mktemp -d); \
+	trap 'rm -rf "$$tmp"' EXIT INT TERM; \
+	sh scripts/build.sh; \
+	cp $(out_dir)/SHA256SUMS "$$tmp/first"; \
+	sh scripts/build.sh; \
+	cmp "$$tmp/first" $(out_dir)/SHA256SUMS; \
+	echo "reproducible: $$(cat $(out_dir)/SHA256SUMS)"
+
 run_disk: $(out_dir)/disk.img
 	qemu-system-i386 -drive file=$<,format=raw -d int,cpu_reset -D qemu.log
 
@@ -53,6 +66,8 @@ clean:
 	rm -f $(build_dir)/bootloader.o \
 	$(build_dir)/bootloader.lst \
 	$(out_dir)/disk.img \
+	$(out_dir)/SHA256SUMS \
+	$(out_dir)/build-manifest.txt \
 	qemu.log
 	$(MAKE) -C $(stage2_dir) clean
 	$(MAKE) -C $(kernel_dir) clean
