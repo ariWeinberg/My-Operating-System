@@ -2,7 +2,7 @@
 set -eu
 
 readonly source_dir=/src
-readonly work_dir=/work/source
+readonly work_dir=/tmp/arios-source
 readonly epoch="${SOURCE_DATE_EPOCH:-1686528000}"
 
 if [ ! -f "${source_dir}/makefile" ]; then
@@ -13,7 +13,7 @@ fi
 rm -rf "${work_dir}"
 mkdir -p "${work_dir}"
 cp -a "${source_dir}/." "${work_dir}/"
-rm -rf     "${work_dir}/.git"     "${work_dir}/build"     "${work_dir}/out"     "${work_dir}/kernel/build"     "${work_dir}/qemu.log"
+rm -rf "${work_dir}/.git" "${work_dir}/build" "${work_dir}/out"     "${work_dir}/kernel/build" "${work_dir}/qemu.log"
 
 # Git does not preserve mtimes. Normalize every input before mtools copies files
 # into FAT directory entries, then freeze wall-clock reads during image creation.
